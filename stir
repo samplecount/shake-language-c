@@ -13,13 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [ -f "$HOME/.profile" ]; then
-    source "$HOME/.profile"
-elif [ -f "$HOME/.bash_login" ]; then
-    source "$HOME/.bash_login"
+rtsopts="+RTS -N -RTS"
+
+cabal_dev=`which cabal-dev`
+if [ -z "$cabal_dev" ]; then
+    cabal_dev="$HOME/.cabal/bin/cabal-dev"
 fi
 
-rtsopts="+RTS -N -RTS"
+if [ ! -x "$cabal_dev" ]; then
+    echo "`basename $0`: cabal-dev executable not found"
+    exit 1
+fi
 
 function shakeit()
 {
@@ -33,6 +37,6 @@ function shakeit_with_errors()
 }
 
 case $1 in
-    update) shift ; cabal-dev install "$@" ;;
+    update) shift ; "$cabal_dev" install "$@" ;;
     *) shakeit "$@" ;;
 esac
