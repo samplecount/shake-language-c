@@ -19,10 +19,6 @@ elif [ -f "$HOME/.bash_login" ]; then
     source "$HOME/.bash_login"
 fi
 
-# if [ -z "$VIRTHUALENV" -a -f "../.virthualenv/bin/activate" ]; then
-#     source "../.virthualenv/bin/activate"
-# fi
-
 rtsopts="+RTS -N -RTS"
 
 function shakeit()
