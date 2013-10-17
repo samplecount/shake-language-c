@@ -16,23 +16,32 @@ module Shakefile.C.PkgConfig (
     pkgConfig
 ) where
 
-import Control.Applicative ((<$>))
 import Data.List (isSuffixOf)
 import Shakefile.C (BuildFlags, compilerFlags, linkerFlags)
 import Shakefile.Lens (append)
-import System.Process (readProcess)
+import System.Exit (ExitCode(..))
+import System.Process (readProcessWithExitCode)
 
 -- ====================================================================
 -- PkgConfig
 
 pkgConfig :: String -> IO (BuildFlags -> BuildFlags)
 pkgConfig pkg = do
-    cflags <- parseFlags <$> readProcess "pkg-config" ["--cflags", pkg] ""
-    lflags <- parseFlags <$> readProcess "pkg-config" ["--libs", pkg] ""
-    return $ append compilerFlags [(Nothing, cflags)] . append linkerFlags lflags
+    (code1, cflags, _) <- readProcessWithExitCode "pkg-config" ["--cflags", pkg] ""
+    case code1 of
+        ExitSuccess -> do
+            (code2, ldflags, _) <- readProcessWithExitCode "pkg-config" ["--libs", pkg] ""
+            case code2 of
+                ExitSuccess ->
+                    return $ append compilerFlags [(Nothing, parseFlags cflags)]
+                           . append linkerFlags (parseFlags ldflags)
+                _ -> notFound
+        _ -> notFound
     where
+        notFound = do
+            putStrLn $ "WARNING: package " ++ pkg ++ " not found (pkgconfig)"
+            return id
         parseFlags = map (dropSuffix "\\") . words . head . lines
         dropSuffix s x = if s `isSuffixOf` x
                          then reverse (drop (length s) (reverse x))
                          else x
-
