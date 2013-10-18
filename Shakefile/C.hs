@@ -335,10 +335,10 @@ sourceTransform f cmd input = do
     want [output]
     return output
 
-dependencyFile :: ToolChain -> BuildFlags -> FilePath -> FilePath -> Shake.Rules ()
-dependencyFile toolChain buildFlags input output = do
+dependencyFile :: ToolChain -> BuildFlags -> FilePath -> [FilePath] -> FilePath -> Shake.Rules ()
+dependencyFile toolChain buildFlags input deps output = do
     output ?=> \_ -> do
-        need [input]
+        need $ [input] ++ deps
         system' (tool compilerCmd toolChain)
                 $  concatMapFlag "-I" (buildFlags ^. systemIncludes)
                 ++ mapFlag "-iquote" (buildFlags ^. userIncludes)
@@ -355,7 +355,7 @@ type ObjectRule = ToolChain -> BuildFlags -> FilePath -> [FilePath] -> FilePath 
 staticObject :: ObjectRule
 staticObject toolChain buildFlags input deps output = do
     let depFile = output <.> "d"
-    dependencyFile toolChain buildFlags input depFile
+    dependencyFile toolChain buildFlags input deps depFile
     output ?=> \_ -> do
         deps' <- parseDependencies <$> readFile' depFile
         need $ [input] ++ deps ++ deps'
