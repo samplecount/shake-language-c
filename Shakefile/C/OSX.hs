@@ -1,19 +1,18 @@
 module Shakefile.C.OSX (
-    getDeveloperPath
+    DeveloperPath
+  , getDeveloperPath
   , getSystemVersion
   , macOSX
   , iPhoneOS
   , iPhoneSimulator
   , target
+  , getDefaultToolChain
   , toolChain_MacOSX
   , toolChain_MacOSX_gcc
-  , buildFlags_MacOSX
   , toolChain_IOS
   , toolChain_IOS_gcc
-  , buildFlags_IOS
   , toolChain_IOS_Simulator
   , toolChain_IOS_Simulator_gcc
-  , buildFlags_IOS_Simulator
   , universalBinary
 ) where
 
@@ -90,67 +89,66 @@ osxLinkResultFileName Executable = id
 osxLinkResultFileName SharedLibrary = ("lib"++) . (<.> "dylib")
 osxLinkResultFileName DynamicLibrary =            (<.> "dylib")
 
-toolChain_MacOSX :: DeveloperPath -> ToolChain
-toolChain_MacOSX developer =
+getDefaultToolChain :: IO (Target, ToolChain)
+getDefaultToolChain = do
+    version <- getSystemVersion
+    developerPath <- getDeveloperPath
+    let defaultTarget = target (X86 X86_64) (macOSX version)
+    return (defaultTarget, toolChain_MacOSX defaultTarget developerPath)
+
+mkDefaultBuildFlags :: Target -> DeveloperPath -> BuildFlags -> BuildFlags
+mkDefaultBuildFlags target developer =
+    append preprocessorFlags [ "-isysroot", sysRoot ]
+  . append compilerFlags [(Nothing, archFlags target)]
+  . append linkerFlags (archFlags target ++ [ "-isysroot", sysRoot ])
+  where sysRoot = platformSDKPath developer (target ^. targetPlatform)
+
+toolChain_MacOSX :: Target -> DeveloperPath -> ToolChain
+toolChain_MacOSX target developer =
     prefix .~ Just (developerPath developer </> "Toolchains/XcodeDefault.xctoolchain/usr")
   $ compilerCmd .~ "clang"
   $ archiverCmd .~ "libtool"
   $ archiver .~ osxArchiver
   $ linkerCmd .~ "clang++"
   $ linker .~ osxLinker
-  $ linkResultFileName .~ osxLinkResultFileName 
+  $ linkResultFileName .~ osxLinkResultFileName
+  $ defaultBuildFlags .~ ( append compilerFlags [(Nothing, ["-mmacosx-version-min=" ++ showVersion (platformVersion (target ^. targetPlatform))])]
+                         . mkDefaultBuildFlags target developer )
   $ defaultToolChain
 
-toolChain_MacOSX_gcc :: DeveloperPath -> ToolChain
-toolChain_MacOSX_gcc developer =
+toolChain_MacOSX_gcc :: Target -> DeveloperPath -> ToolChain
+toolChain_MacOSX_gcc target developer =
     compilerCmd .~ "gcc"
   $ linkerCmd .~ "g++"
-  $ toolChain_MacOSX developer
-
-osxDefaultBuildFlags :: Target -> DeveloperPath -> BuildFlags
-osxDefaultBuildFlags target developer =
-    append preprocessorFlags [ "-isysroot", sysRoot ]
-  . append compilerFlags [(Nothing, archFlags target)]
-  . append linkerFlags (archFlags target ++ [ "-isysroot", sysRoot ])
-  $ defaultBuildFlags
-  where sysRoot = platformSDKPath developer (target ^. targetPlatform)
-
-buildFlags_MacOSX :: Target -> DeveloperPath -> BuildFlags
-buildFlags_MacOSX target developer =
-    append compilerFlags [(Nothing, ["-mmacosx-version-min=" ++ showVersion (platformVersion (target ^. targetPlatform))])]
-  $ osxDefaultBuildFlags target developer
+  $ toolChain_MacOSX target developer
 
 iosMinVersion :: String
 iosMinVersion = "5.0" -- Required for C++11
 --iosMinVersion = "40200"
 
-toolChain_IOS :: DeveloperPath -> ToolChain
-toolChain_IOS = toolChain_MacOSX
+toolChain_IOS :: Target -> DeveloperPath -> ToolChain
+toolChain_IOS target developer =
+    defaultBuildFlags .~ ( append compilerFlags [(Nothing, ["-miphoneos-version-min=" ++ iosMinVersion])]
+                         . mkDefaultBuildFlags target developer )
+  $ toolChain_MacOSX target developer
 
-toolChain_IOS_gcc :: DeveloperPath -> ToolChain
-toolChain_IOS_gcc developer =
+toolChain_IOS_gcc :: Target -> DeveloperPath -> ToolChain
+toolChain_IOS_gcc target developer =
     prefix .~ Just (developerPath developer </> "Platforms/iPhoneOS.platform/Developer/usr")
   $ compilerCmd .~ "llvm-gcc"
   $ linkerCmd .~ "llvm-g++"
-  $ toolChain_IOS developer
+  $ toolChain_IOS target developer
 
-buildFlags_IOS :: Target -> DeveloperPath -> BuildFlags
-buildFlags_IOS target developer =
-    append compilerFlags [(Nothing, ["-miphoneos-version-min=" ++ iosMinVersion])]
-  $ osxDefaultBuildFlags target developer
+toolChain_IOS_Simulator :: Target -> DeveloperPath -> ToolChain
+toolChain_IOS_Simulator target developer =
+    defaultBuildFlags .~ ( append compilerFlags [(Nothing, ["-miphoneos-version-min=" ++ iosMinVersion])]
+                         . mkDefaultBuildFlags target developer )
+  $ toolChain_MacOSX target developer
 
-toolChain_IOS_Simulator :: DeveloperPath -> ToolChain
-toolChain_IOS_Simulator = toolChain_MacOSX
-
-toolChain_IOS_Simulator_gcc :: DeveloperPath -> ToolChain
-toolChain_IOS_Simulator_gcc developer =
+toolChain_IOS_Simulator_gcc :: Target -> DeveloperPath -> ToolChain
+toolChain_IOS_Simulator_gcc target developer =
     prefix .~ Just (developerPath developer </> "Platforms/iPhoneSimulator.platform/Developer/usr")
-  $ toolChain_IOS_gcc developer
-
-buildFlags_IOS_Simulator :: Target -> DeveloperPath -> BuildFlags
-buildFlags_IOS_Simulator target developer =
-    append compilerFlags [(Nothing, ["-miphoneos-version-min=" ++ iosMinVersion])]
-  $ osxDefaultBuildFlags target developer
+  $ toolChain_IOS_gcc target developer
 
 universalBinary :: [FilePath] -> FilePath -> Rules FilePath
 universalBinary inputs output = do

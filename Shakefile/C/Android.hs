@@ -4,7 +4,6 @@ module Shakefile.C.Android (
   , ToolChainVariant(..)
   , toolChain
   , standaloneToolChain
-  , buildFlags
   , abiString
   , gnustl
   , native_app_glue
@@ -66,6 +65,7 @@ toolChain ndk GCC_4_7 target =
   $ compilerCmd .~ mkTool "gcc"
   $ archiverCmd .~ mkTool "ar"
   $ linkerCmd .~ mkTool "g++"
+  $ defaultBuildFlags .~ mkDefaultBuildFlags ndk target
   $ defaultToolChain
   where tcPrefix = toolChainPrefix target
         mkTool x = tcPrefix ++ x
@@ -95,8 +95,8 @@ archLinkerFlags arch =
         _         -> common
     where common = ["-Wl,--no-undefined", "-Wl,-z,relro", "-Wl,-z,now"]
 
-buildFlags :: FilePath -> Target -> BuildFlags
-buildFlags ndk target =
+mkDefaultBuildFlags :: FilePath -> Target -> BuildFlags -> BuildFlags
+mkDefaultBuildFlags ndk target =
     append compilerFlags ([(Nothing, [sysroot, march])] ++ archCompilerFlags arch)
   . append compilerFlags ([(Nothing, [
       "-fpic"
@@ -107,7 +107,6 @@ buildFlags ndk target =
   . append linkerFlags ([sysroot, march] ++ archLinkerFlags arch)
   . append linkerFlags ["-no-canonical-prefixes"]
   . append archiverFlags ["-rs"]
-  $ defaultBuildFlags
   where
     arch = target ^. targetArch
     sysroot = "--sysroot=" ++ ndk </> "platforms" </> androidPlatformPrefix target

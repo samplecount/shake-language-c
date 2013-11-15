@@ -42,7 +42,6 @@ module Shakefile.C (
   , Linkage(..)
   , LinkResult(..)
   , BuildFlags
-  , defaultBuildFlags
   , systemIncludes
   , userIncludes
   , defines
@@ -64,6 +63,7 @@ module Shakefile.C (
   , linkerCmd
   , linker
   , linkResultFileName
+  , defaultBuildFlags
   , tool
   , Archiver
   , defaultArchiver
@@ -237,6 +237,7 @@ data ToolChain = ToolChain {
   , _linker :: LinkResult -> Linker
   -- Not sure whether this should be someplace else
   , _linkResultFileName :: LinkResult -> String -> FilePath
+  , _defaultBuildFlags :: BuildFlags -> BuildFlags
   }
 
 makeLenses ''ToolChain
@@ -283,6 +284,7 @@ defaultToolChain =
                 Executable -> defaultLinker toolChain
                 _          -> defaultLinker toolChain . append linkerFlags ["-shared"]
       , _linkResultFileName = defaultLinkResultFileName
+      , _defaultBuildFlags = id
       }
 
 tool :: (Getter ToolChain String) -> ToolChain -> FilePath
@@ -295,8 +297,8 @@ toolChainFromEnvironment = do
   env <- getEnvironment
   return $ maybe id (\cc -> set compilerCmd cc) (lookup "CC" env)
 
-defaultBuildFlags :: BuildFlags
-defaultBuildFlags =
+mkDefaultBuildFlags :: BuildFlags
+mkDefaultBuildFlags =
     BuildFlags {
         _systemIncludes = []
       , _userIncludes = []
@@ -379,51 +381,52 @@ mkBuildPath :: Env -> Target -> FilePath -> FilePath
 mkBuildPath env target path = (env ^. buildPrefix) </> makeRelative "/" path
 
 buildProduct :: ObjectRule -> Linker -> FilePath
-             -> Env -> Target -> ToolChain -> BuildFlags
+             -> Env -> Target -> ToolChain
              -> SourceTree BuildFlags
              -> Shake.Rules FilePath
-buildProduct object link fileName env target toolChain buildFlags sources = do
+buildProduct object link fileName env target toolChain sources = do
     let resultPath = mkBuildPath env target fileName
         objectsDir = mkObjectsDir env target fileName
-    objects <- forM (SourceTree.apply buildFlags sources) $ \(buildFlags', (src, deps)) -> do
+        sources' = SourceTree.flags (toolChain ^. defaultBuildFlags) sources
+    objects <- forM (SourceTree.apply mkDefaultBuildFlags sources') $ \(buildFlags, (src, deps)) -> do
         let obj = objectsDir </> makeRelative "/" (src <.> "o")
-        object toolChain buildFlags' src deps obj
+        object toolChain buildFlags src deps obj
         return obj
-    resultPath ?=> link toolChain buildFlags objects
+    resultPath ?=> link toolChain (SourceTree.collect mkDefaultBuildFlags sources') objects
     return resultPath
 
 -- | Rule for building an executable.
-executable :: Env -> Target -> ToolChain -> BuildFlags -> String -> SourceTree BuildFlags -> Shake.Rules FilePath
-executable env target toolChain buildFlags name sources =
+executable :: Env -> Target -> ToolChain -> String -> SourceTree BuildFlags -> Shake.Rules FilePath
+executable env target toolChain name sources =
     buildProduct
         staticObject
         ((toolChain ^. linker) Executable)
         ((toolChain ^. linkResultFileName) Executable name)
-        env target toolChain buildFlags sources
+        env target toolChain sources
 
 -- | Rule for building a static library.
-staticLibrary :: Env -> Target -> ToolChain -> BuildFlags -> String -> SourceTree BuildFlags -> Shake.Rules FilePath
-staticLibrary env target toolChain buildFlags name sources =
+staticLibrary :: Env -> Target -> ToolChain -> String -> SourceTree BuildFlags -> Shake.Rules FilePath
+staticLibrary env target toolChain name sources =
     buildProduct
         staticObject
         (toolChain ^. archiver)
         ((toolChain ^. archiveFileName) name)
-        env target toolChain buildFlags sources
+        env target toolChain sources
 
 -- | Rule for building a shared library.
-sharedLibrary :: Env -> Target -> ToolChain -> BuildFlags -> String -> SourceTree BuildFlags -> Shake.Rules FilePath
-sharedLibrary env target toolChain buildFlags name sources =
+sharedLibrary :: Env -> Target -> ToolChain -> String -> SourceTree BuildFlags -> Shake.Rules FilePath
+sharedLibrary env target toolChain name sources =
     buildProduct
         sharedObject
         ((toolChain ^. linker) SharedLibrary)
         ((toolChain ^. linkResultFileName) SharedLibrary name)
-        env target toolChain buildFlags sources
+        env target toolChain sources
 
 -- | Rule for building a dynamic library.
-dynamicLibrary :: Env -> Target -> ToolChain -> BuildFlags -> String -> SourceTree BuildFlags -> Shake.Rules FilePath
-dynamicLibrary env target toolChain buildFlags name sources =
+dynamicLibrary :: Env -> Target -> ToolChain -> String -> SourceTree BuildFlags -> Shake.Rules FilePath
+dynamicLibrary env target toolChain name sources =
     buildProduct
         sharedObject
         ((toolChain ^. linker) DynamicLibrary)
         ((toolChain ^. linkResultFileName) DynamicLibrary name)
-        env target toolChain buildFlags sources
+        env target toolChain sources
