@@ -22,6 +22,7 @@ module Shakefile.SourceTree (
   , list
   , append
   , apply
+  , collect
 ) where
 
 import Data.Tree (Tree(Node))
@@ -57,3 +58,9 @@ apply = go
         go a (Node (f, fs) []) = flatten (f a) fs
         go a (Node (f, fs) ns) = let a' = f a
                                  in flatten a' fs ++ concatMap (go a') ns
+
+collect :: a -> SourceTree a -> a
+collect a t = go id t a
+    where
+        go g (Node (f, _) []) = f.g
+        go g (Node (f, _) ns) = foldl go (f.g) ns
