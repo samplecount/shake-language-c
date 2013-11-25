@@ -13,17 +13,42 @@
 -- limitations under the License.
 
 module Shakefile.C.Host (
-    getDefaultToolChain
+    OS(..)
+  , os
+  , onlyOn
+  , getDefaultToolChain
 ) where
 
 import           Shakefile.C (Target, ToolChain)
 import qualified Shakefile.C.Linux as Linux
 import qualified Shakefile.C.OSX as OSX
-import           System.Info (os)
+import qualified System.Info as System
 
+-- | Host operating system.
+data OS =
+    Linux
+  | OSX
+  | Windows
+  deriving (Eq, Show)
+
+-- | This host's operating system.
+os :: OS
+os =
+  case System.os of
+    "darwin" -> OSX
+    "mingw"  -> Windows
+    "linux"  -> Linux
+    _ -> error $ "Unknown host operating system: " ++ System.os
+
+onlyOn :: OS -> (a -> a) -> (a -> a)
+onlyOn which f
+  | which == os = f
+  | otherwise = id
+
+-- | Get host's default tool chain.
 getDefaultToolChain :: IO (Target, ToolChain)
-getDefaultToolChain
-    | os == "darwin" = OSX.getDefaultToolChain
-    | os == "mingw" = error "No default toolchain for Windows yet"
-    | os == "linux" = Linux.getDefaultToolChain
-    | otherwise = error $ "No default toolchain for this operating system (" ++ os ++ ")"
+getDefaultToolChain =
+  case os of
+    OSX -> OSX.getDefaultToolChain
+    Linux -> Linux.getDefaultToolChain
+    _ -> error $ "No default toolchain for this operating system (" ++ show os ++ ")"
