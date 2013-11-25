@@ -306,7 +306,16 @@ tool f toolChain = maybe cmd (flip combine ("bin" </> cmd))
 toolChainFromEnvironment :: IO (ToolChain -> ToolChain)
 toolChainFromEnvironment = do
   env <- getEnvironment
-  return $ maybe id (\cc -> set compilerCmd cc) (lookup "CC" env)
+  return $ apply env (set compilerCmd) "CC"
+         . apply env (set variant . parseVariant) "TOOLCHAIN_VARIANT"
+  where
+    apply env f k = maybe id f (lookup k env)
+    parseVariant s =
+      case map toLower s of
+        "gcc" -> GCC
+        "llvm" -> LLVM
+        "clang" -> LLVM
+        _ -> Generic
 
 onlyFor :: ToolChain -> ToolChainVariant -> (a -> a) -> (a -> a)
 onlyFor toolChain wanted f
