@@ -13,8 +13,7 @@
 -- limitations under the License.
 
 module Shakefile.C.Linux (
-    ToolChainVariant(..)
-  , toolChain
+    toolChain
   , getDefaultToolChain
 ) where
 
@@ -35,11 +34,16 @@ getHostArch = do
 target :: Arch -> Target
 target arch = mkTarget arch "gnu" "linux" (Platform "Linux" (Version [0] []))
 
-data ToolChainVariant = GCC deriving (Eq, Show)
-
 toolChain :: ToolChainVariant -> ToolChain
 toolChain GCC =
-    compilerCmd .~ "gcc"
+    variant .~ GCC
+  $ compilerCmd .~ "gcc"
+  $ archiverCmd .~ "ar"
+  $ linkerCmd .~ "g++"
+  $ defaultToolChain
+toolChain LLVM =
+    variant .~ LLVM
+  $ compilerCmd .~ "gcc"
   $ archiverCmd .~ "ar"
   $ linkerCmd .~ "g++"
   $ defaultToolChain

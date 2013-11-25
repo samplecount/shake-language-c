@@ -53,8 +53,10 @@ module Shakefile.C (
   , staticLibraries
   , archiverFlags
   , ToolChain
+  , ToolChainVariant(..)
   , defaultToolChain
   , toolChainFromEnvironment
+  , variant
   , prefix
   , compilerCmd
   , archiverCmd
@@ -65,6 +67,7 @@ module Shakefile.C (
   , linkResultFileName
   , defaultBuildFlags
   , tool
+  , onlyFor
   , Archiver
   , defaultArchiver
   , Linker
@@ -224,11 +227,18 @@ data BuildFlags = BuildFlags {
 
 makeLenses ''BuildFlags
 
+data ToolChainVariant =
+    Generic
+  | GCC
+  | LLVM
+  deriving (Eq, Show)
+
 type Linker = ToolChain -> BuildFlags -> [FilePath] -> FilePath -> Shake.Action ()
 type Archiver = Linker
 
 data ToolChain = ToolChain {
-    _prefix :: Maybe FilePath
+    _variant :: ToolChainVariant
+  , _prefix :: Maybe FilePath
   , _compilerCmd :: String
   , _archiverCmd :: String
   , _archiver :: Archiver
@@ -273,7 +283,8 @@ defaultLinkResultFileName DynamicLibrary =            (<.> "so")
 defaultToolChain :: ToolChain
 defaultToolChain =
     ToolChain {
-        _prefix = Nothing
+        _variant = GCC
+      , _prefix = Nothing
       , _compilerCmd = "gcc"
       , _archiverCmd = "ar"
       , _archiver = defaultArchiver
@@ -296,6 +307,11 @@ toolChainFromEnvironment :: IO (ToolChain -> ToolChain)
 toolChainFromEnvironment = do
   env <- getEnvironment
   return $ maybe id (\cc -> set compilerCmd cc) (lookup "CC" env)
+
+onlyFor :: ToolChain -> ToolChainVariant -> (a -> a) -> (a -> a)
+onlyFor toolChain wanted f
+  | wanted == toolChain ^. variant = f
+  | otherwise = id
 
 mkDefaultBuildFlags :: BuildFlags
 mkDefaultBuildFlags =

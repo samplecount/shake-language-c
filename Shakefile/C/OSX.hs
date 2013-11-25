@@ -119,7 +119,8 @@ mkDefaultBuildFlags target developer =
 
 toolChain_MacOSX :: Target -> DeveloperPath -> ToolChain
 toolChain_MacOSX target developer =
-    prefix .~ Just (developerPath developer </> "Toolchains/XcodeDefault.xctoolchain/usr")
+    variant .~ LLVM
+  $ prefix .~ Just (developerPath developer </> "Toolchains/XcodeDefault.xctoolchain/usr")
   $ compilerCmd .~ "clang"
   $ archiverCmd .~ "libtool"
   $ archiver .~ osxArchiver
@@ -132,7 +133,8 @@ toolChain_MacOSX target developer =
 
 toolChain_MacOSX_gcc :: Target -> DeveloperPath -> ToolChain
 toolChain_MacOSX_gcc target developer =
-    compilerCmd .~ "gcc"
+    variant .~ GCC
+  $ compilerCmd .~ "gcc"
   $ linkerCmd .~ "g++"
   $ toolChain_MacOSX target developer
 
@@ -148,7 +150,8 @@ toolChain_IOS target developer =
 
 toolChain_IOS_gcc :: Target -> DeveloperPath -> ToolChain
 toolChain_IOS_gcc target developer =
-    prefix .~ Just (developerPath developer </> "Platforms/iPhoneOS.platform/Developer/usr")
+    variant .~ GCC
+  $ prefix .~ Just (developerPath developer </> "Platforms/iPhoneOS.platform/Developer/usr")
   $ compilerCmd .~ "llvm-gcc"
   $ linkerCmd .~ "llvm-g++"
   $ toolChain_IOS target developer
@@ -161,7 +164,8 @@ toolChain_IOS_Simulator target developer =
 
 toolChain_IOS_Simulator_gcc :: Target -> DeveloperPath -> ToolChain
 toolChain_IOS_Simulator_gcc target developer =
-    prefix .~ Just (developerPath developer </> "Platforms/iPhoneSimulator.platform/Developer/usr")
+    variant .~ GCC
+  $ prefix .~ Just (developerPath developer </> "Platforms/iPhoneSimulator.platform/Developer/usr")
   $ toolChain_IOS_gcc target developer
 
 universalBinary :: [FilePath] -> FilePath -> Rules FilePath

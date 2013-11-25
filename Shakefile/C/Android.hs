@@ -15,7 +15,6 @@
 module Shakefile.C.Android (
     platform
   , target
-  , ToolChainVariant(..)
   , toolChain
   , standaloneToolChain
   , abiString
@@ -25,7 +24,7 @@ module Shakefile.C.Android (
 
 import           Control.Lens hiding ((<.>))
 import           Development.Shake.FilePath
-import           Data.Version (Version(..))
+import           Data.Version (Version(..), showVersion)
 import           Shakefile.C
 import           Shakefile.SourceTree (SourceTree)
 import qualified Shakefile.SourceTree as SourceTree
@@ -34,20 +33,6 @@ import qualified System.Info as System
 
 platform :: Int -> Platform
 platform apiVersion = Platform "android" (Version [apiVersion] [])
-
-data ToolChainVariant =
-    -- GCC_4_4
-  -- | GCC_4_6
-    GCC_4_7
-  -- | LLVM_3_1
-  -- | LLVM_3_2
-  deriving (Eq, Show)
-
--- toolChainVariantString :: ToolChainVariant -> String
--- toolChainVariantString GCC_4_4 = "4.4.3"
--- toolChainVariantString GCC_4_6 = "4.6"
--- toolChainVariantString GCC_4_7 = "4.7"
--- toolChainVariantString LLVM_3_1 = "llvm"
 
 toolChainPrefix :: Target -> String
 toolChainPrefix target =
@@ -73,9 +58,10 @@ standaloneToolChain path target =
   $ defaultToolChain
   where mkTool x = targetString target ++ "-" ++ x
 
-toolChain :: FilePath -> ToolChainVariant -> Target -> ToolChain
-toolChain ndk GCC_4_7 target =
-    prefix .~ Just (ndk </> "toolchains" </> tcPrefix ++ "4.7" </> "prebuilt" </> osPrefix)
+toolChain :: FilePath -> ToolChainVariant -> Version -> Target -> ToolChain
+toolChain ndk GCC (Version [4,7] []) target =
+    variant .~ GCC
+  $ prefix .~ Just (ndk </> "toolchains" </> tcPrefix ++ "4.7" </> "prebuilt" </> osPrefix)
   $ compilerCmd .~ mkTool "gcc"
   $ archiverCmd .~ mkTool "ar"
   $ linkerCmd .~ mkTool "g++"
@@ -83,6 +69,7 @@ toolChain ndk GCC_4_7 target =
   $ defaultToolChain
   where tcPrefix = toolChainPrefix target
         mkTool x = tcPrefix ++ x
+toolChain _ variant version _ = error $ "Unknown tool chain variant " ++ show variant ++ " " ++ showVersion version
 
 androidPlatformPrefix :: Target -> FilePath
 androidPlatformPrefix target =
