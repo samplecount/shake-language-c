@@ -151,6 +151,7 @@ data ArmVersion =
 data Arch =
     X86 X86Version
   | Arm ArmVersion
+  | LLVM_IR
   deriving (Eq, Show)
 
 archShortString :: Arch -> String
@@ -158,6 +159,7 @@ archShortString arch =
   case arch of
     X86 _ -> "x86"
     Arm _ -> "arm"
+    LLVM_IR -> "llvm_ir"
 
 archString :: Arch -> String
 archString arch =
@@ -169,6 +171,7 @@ archString arch =
     Arm Armv6 -> "armv6"
     Arm Armv7 -> "armv7"
     Arm Armv7s -> "armv7s"
+    LLVM_IR -> "llvm_ir"
 
 data Target = Target {
     _targetArch :: Arch
