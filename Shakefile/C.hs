@@ -264,9 +264,6 @@ defaultArchiver toolChain buildFlags inputs output = do
         ++ [output]
         ++ inputs
 
-defaultArchiveFileName :: String -> FilePath
-defaultArchiveFileName = ("lib"++) . (<.> "a")
-
 defaultLinker :: Linker
 defaultLinker toolChain buildFlags inputs output = do
     let staticLibs = buildFlags ^. staticLibraries
@@ -279,11 +276,6 @@ defaultLinker toolChain buildFlags inputs output = do
           ++ concatMapFlag "-l" (buildFlags ^. libraries)
           ++ ["-o", output]
 
-defaultLinkResultFileName :: LinkResult -> String -> FilePath
-defaultLinkResultFileName Executable = id
-defaultLinkResultFileName SharedLibrary = ("lib"++) . (<.> "so")
-defaultLinkResultFileName DynamicLibrary =            (<.> "so")
-
 defaultToolChain :: ToolChain
 defaultToolChain =
     ToolChain {
@@ -292,13 +284,17 @@ defaultToolChain =
       , _compilerCmd = "gcc"
       , _archiverCmd = "ar"
       , _archiver = defaultArchiver
-      , _archiveFileName = defaultArchiveFileName
+      , _archiveFileName = ("lib"++) . (<.> "a")
       , _linkerCmd = "gcc"
       , _linker = \link toolChain ->
             case link of
                 Executable -> defaultLinker toolChain
                 _          -> defaultLinker toolChain . append linkerFlags ["-shared"]
-      , _linkResultFileName = defaultLinkResultFileName
+      , _linkResultFileName = \linkResult ->
+          case linkResult of
+            Executable     -> id
+            SharedLibrary  -> ("lib"++) . (<.> "so")
+            DynamicLibrary ->             (<.> "so")
       , _defaultBuildFlags = id
       }
 

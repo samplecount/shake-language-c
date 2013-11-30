@@ -98,11 +98,6 @@ getSystemVersion =
     <$> (map read . take 2 . splitOn ".")
     <$> readProcess "sw_vers" ["-productVersion"] ""
 
-osxLinkResultFileName :: LinkResult -> String -> FilePath
-osxLinkResultFileName Executable = id
-osxLinkResultFileName SharedLibrary = ("lib"++) . (<.> "dylib")
-osxLinkResultFileName DynamicLibrary =            (<.> "dylib")
-
 getDefaultToolChain :: IO (Target, ToolChain)
 getDefaultToolChain = do
     version <- getSystemVersion
@@ -126,7 +121,11 @@ toolChain_MacOSX target developer =
   $ archiver .~ osxArchiver
   $ linkerCmd .~ "clang++"
   $ linker .~ osxLinker
-  $ linkResultFileName .~ osxLinkResultFileName
+  $ linkResultFileName .~ (\linkResult ->
+      case linkResult of
+        Executable     -> id
+        SharedLibrary  -> ("lib"++) . (<.> "dylib")
+        DynamicLibrary ->             (<.> "dylib"))
   $ defaultBuildFlags .~ ( append compilerFlags [(Nothing, ["-mmacosx-version-min=" ++ showVersion (platformVersion (target ^. targetPlatform))])]
                          . mkDefaultBuildFlags target developer )
   $ defaultToolChain
