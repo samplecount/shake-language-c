@@ -66,6 +66,7 @@ module Shakefile.C (
   , linker
   , linkResultFileName
   , defaultBuildFlags
+  , command
   , tool
   , onlyFor
   , Archiver
@@ -301,10 +302,14 @@ defaultToolChain =
       , _defaultBuildFlags = id
       }
 
+-- | Get the full path of an arbitrary toolchain command.
+command :: String -> ToolChain -> FilePath
+command cmd toolChain = maybe cmd (flip combine ("bin" </> cmd))
+                                  (toolChain ^. prefix)
+
+-- | Get the full path of a predefined tool.
 tool :: (Getter ToolChain String) -> ToolChain -> FilePath
-tool f toolChain = maybe cmd (flip combine ("bin" </> cmd))
-                         (toolChain ^. prefix)
-    where cmd = toolChain ^. f
+tool getter toolChain = command (toolChain ^. getter) toolChain
 
 toolChainFromEnvironment :: IO (ToolChain -> ToolChain)
 toolChainFromEnvironment = do
