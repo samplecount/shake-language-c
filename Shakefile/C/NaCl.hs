@@ -75,4 +75,9 @@ toolChain sdk target =
   $ archiverCmd .~ pnaclTool "ar"
   $ archiver .~ archiver_
   $ linkerCmd .~ pnaclTool "clang++"
+  $ linkResultFileName .~ (\linkResult ->
+      case linkResult of
+        Executable     -> (<.> "pexe")
+        SharedLibrary  -> ("lib"++) . (<.> "so")
+        DynamicLibrary ->             (<.> "so"))
   $ defaultToolChain
