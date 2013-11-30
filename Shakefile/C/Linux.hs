@@ -59,6 +59,7 @@ toolChain LLVM =
   $ archiverCmd .~ "ar"
   $ linkerCmd .~ "g++"
   $ defaultToolChain
+toolChain Generic = toolChain GCC
 
 getDefaultToolChain :: IO (Target, ToolChain)
 getDefaultToolChain = do
