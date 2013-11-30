@@ -61,7 +61,8 @@ archiver_ :: Archiver
 archiver_ toolChain buildFlags inputs output = do
     need inputs
     system' (tool archiverCmd toolChain)
-          $  buildFlags ^. archiverFlags
+          $  ["cr"]
+          ++ buildFlags ^. archiverFlags
           ++ [output]
           ++ inputs
     system' (command (pnaclTool "ranlib") toolChain) [output]
@@ -74,5 +75,4 @@ toolChain sdk target =
   $ archiverCmd .~ pnaclTool "ar"
   $ archiver .~ archiver_
   $ linkerCmd .~ pnaclTool "clang++"
-  $ defaultBuildFlags .~ append archiverFlags ["cr"]
   $ defaultToolChain
