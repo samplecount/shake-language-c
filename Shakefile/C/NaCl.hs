@@ -60,6 +60,6 @@ toolChain sdk target =
   $ compilerCmd .~ mkTool "clang"
   $ archiverCmd .~ mkTool "ar"
   $ linkerCmd .~ mkTool "clang++"
-  $ defaultBuildFlags .~ append archiverFlags ["r"]
+  $ defaultBuildFlags .~ append archiverFlags ["cr"]
   $ defaultToolChain
   where mkTool x = "pnacl-" ++ x
