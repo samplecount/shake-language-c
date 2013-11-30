@@ -20,6 +20,7 @@ module Shakefile.C.NaCl (
 ) where
 
 import           Control.Lens hiding ((<.>))
+import           Development.Shake (need, system')
 import           Development.Shake.FilePath
 import           Data.Version (Version(..))
 import           Shakefile.C
@@ -53,13 +54,25 @@ hostString =
     OSX     -> "mac"
     Windows -> error "hostString: is \"win\" correct?"
 
+pnaclTool :: String -> String
+pnaclTool = ("pnacl-"++)
+
+archiver_ :: Archiver
+archiver_ toolChain buildFlags inputs output = do
+    need inputs
+    system' (tool archiverCmd toolChain)
+          $  buildFlags ^. archiverFlags
+          ++ [output]
+          ++ inputs
+    system' (command (pnaclTool "ranlib") toolChain) [output]
+
 toolChain :: FilePath -> Target -> ToolChain
 toolChain sdk target =
     variant .~ LLVM
   $ prefix .~ Just (sdk </> platformPrefix target </> "toolchain" </> hostString ++ "_" ++ "pnacl")
-  $ compilerCmd .~ mkTool "clang"
-  $ archiverCmd .~ mkTool "ar"
-  $ linkerCmd .~ mkTool "clang++"
+  $ compilerCmd .~ pnaclTool "clang"
+  $ archiverCmd .~ pnaclTool "ar"
+  $ archiver .~ archiver_
+  $ linkerCmd .~ pnaclTool "clang++"
   $ defaultBuildFlags .~ append archiverFlags ["cr"]
   $ defaultToolChain
-  where mkTool x = "pnacl-" ++ x
