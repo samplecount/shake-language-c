@@ -50,9 +50,9 @@ platformPrefix target =
 hostString :: String
 hostString =
   case Host.os of
-    Linux   -> error "hostString: is \"linux\" correct"
+    Linux   -> "linux"
     OSX     -> "mac"
-    Windows -> error "hostString: is \"win\" correct?"
+    Windows -> "win"
 
 pnaclTool :: String -> String
 pnaclTool = ("pnacl-"++)
