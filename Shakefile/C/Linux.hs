@@ -18,6 +18,7 @@ module Shakefile.C.Linux (
 ) where
 
 import Control.Lens
+import Development.Shake (need, system')
 import Data.Version (Version(..))
 import Shakefile.C
 import System.Process (readProcess)
@@ -34,11 +35,22 @@ getHostArch = do
 target :: Arch -> Target
 target arch = mkTarget arch "gnu" "linux" (Platform "Linux" (Version [0] []))
 
+archiver_ :: Archiver
+archiver_ toolChain buildFlags inputs output = do
+    need inputs
+    system' (tool archiverCmd toolChain)
+          $  ["cr"]
+          ++ buildFlags ^. archiverFlags
+          ++ [output]
+          ++ inputs
+    system' (command "ranlib" toolChain) [output]
+
 toolChain :: ToolChainVariant -> ToolChain
 toolChain GCC =
     variant .~ GCC
   $ compilerCmd .~ "gcc"
   $ archiverCmd .~ "ar"
+  $ archiver .~ archiver_
   $ linkerCmd .~ "g++"
   $ defaultToolChain
 toolChain LLVM =
