@@ -16,11 +16,18 @@ module Shakefile.C.NaCl (
     pepper
   , canary
   , target
+  , Config(..)
   , toolChain
+  , finalize
+  , libppapi
+  , libppapi_cpp
+  , libnacl_io
+  , libppapi_simple
 ) where
 
+import           Control.Arrow ((>>>))
 import           Control.Lens hiding ((<.>))
-import           Development.Shake (need, system')
+import           Development.Shake (Rules, need, system')
 import           Development.Shake.FilePath
 import           Data.Version (Version(..))
 import           Shakefile.C
@@ -67,17 +74,49 @@ archiver_ toolChain buildFlags inputs output = do
           ++ inputs
     system' (command (pnaclTool "ranlib") toolChain) [output]
 
-toolChain :: FilePath -> Target -> ToolChain
-toolChain sdk target =
+data Config = Debug | Release deriving (Eq, Show)
+
+toolChain :: FilePath -> Config -> Target -> ToolChain
+toolChain sdk config target =
     variant .~ LLVM
-  $ prefix .~ Just (sdk </> platformPrefix target </> "toolchain" </> hostString ++ "_" ++ "pnacl")
+  $ prefix .~ Just (platformDir </> "toolchain" </> hostString ++ "_" ++ "pnacl")
   $ compilerCmd .~ pnaclTool "clang"
   $ archiverCmd .~ pnaclTool "ar"
   $ archiver .~ archiver_
   $ linkerCmd .~ pnaclTool "clang++"
   $ linkResultFileName .~ (\linkResult ->
       case linkResult of
-        Executable     -> (<.> "pexe")
+        Executable     -> (<.> "bc")
         SharedLibrary  -> ("lib"++) . (<.> "so")
         DynamicLibrary ->             (<.> "so"))
+  $ defaultBuildFlags .~
+      ( append userIncludes [platformDir </> "include"]
+      . append libraryPath [platformDir </> "lib" </> "pnacl" </> show config] )
   $ defaultToolChain
+  where platformDir = sdk </> platformPrefix target
+
+-- | Finalize a bit code executable.
+finalize :: ToolChain -> FilePath -> FilePath -> Rules FilePath
+finalize toolChain input output = do
+  let pexe = replaceExtension output "pexe"
+  pexe ?=> \_ -> do
+    need [input]
+    system' (command (pnaclTool "finalize") toolChain)
+            ["-o", pexe, input]
+  return pexe
+
+-- | Link against the Pepper C API library.
+libppapi :: BuildFlags -> BuildFlags
+libppapi = append libraries ["ppapi"]
+
+-- | Link against the Pepper C++ API library.
+libppapi_cpp :: BuildFlags -> BuildFlags
+libppapi_cpp = append libraries ["ppapi_cpp"]
+
+-- | Link against libnacl_io.
+libnacl_io :: BuildFlags -> BuildFlags
+libnacl_io = append libraries ["nacl_io"]
+
+-- | Link against the Simple Pepper C API library.
+libppapi_simple :: BuildFlags -> BuildFlags
+libppapi_simple = append libraries ["ppapi_simple"]
