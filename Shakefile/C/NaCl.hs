@@ -19,6 +19,7 @@ module Shakefile.C.NaCl (
   , Config(..)
   , toolChain
   , finalize
+  , translate
   , libppapi
   , libppapi_cpp
   , libnacl_io
@@ -30,7 +31,8 @@ import           Control.Lens hiding ((<.>))
 import           Development.Shake (Rules, need, system')
 import           Development.Shake.FilePath
 import           Data.Version (Version(..))
-import           Shakefile.C
+import           Shakefile.C hiding (Arch)
+import qualified Shakefile.C as C
 import           Shakefile.C.Host (OS(..))
 import qualified Shakefile.C.Host as Host
 import           Shakefile.Lens (append)
@@ -104,6 +106,21 @@ finalize toolChain input output = do
     system' (command (pnaclTool "finalize") toolChain)
             ["-o", pexe, input]
   return pexe
+
+-- | Translate bit code to native code.
+translate :: ToolChain -> C.Arch -> FilePath -> FilePath -> Rules FilePath
+translate toolChain arch input output = do
+  let archString =
+        case arch of
+          X86 I686   -> "i686"
+          X86 X86_64 -> "x86-64"
+          Arm Armv7  -> "armv7"
+          _ -> error $ "Unsupported architecture: " ++ show arch
+  output ?=> \_ -> do
+    need [input]
+    system' (command (pnaclTool "finalize") toolChain)
+            ["-arch", archString, "-o", output, input]
+  return output
 
 -- | Link against the Pepper C API library.
 libppapi :: BuildFlags -> BuildFlags
