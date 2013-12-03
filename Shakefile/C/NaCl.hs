@@ -24,11 +24,13 @@ module Shakefile.C.NaCl (
   , libppapi_cpp
   , libnacl_io
   , libppapi_simple
+  , Arch(..)
+  , mk_nmf
 ) where
 
-import           Control.Arrow ((>>>))
 import           Control.Lens hiding ((<.>))
-import           Development.Shake (Rules, need, system')
+import           Data.List (intercalate)
+import           Development.Shake (Rules, need, system', writeFileLines)
 import           Development.Shake.FilePath
 import           Data.Version (Version(..))
 import           Shakefile.C hiding (Arch)
@@ -137,3 +139,39 @@ libnacl_io = append libraries ["nacl_io"]
 -- | Link against the Simple Pepper C API library.
 libppapi_simple :: BuildFlags -> BuildFlags
 libppapi_simple = append libraries ["ppapi_simple"]
+
+data Arch =
+    PNaCl
+  | NaCl C.Arch
+  deriving (Eq, Show)
+
+mk_nmf :: [(Arch, FilePath)] -> FilePath -> Rules FilePath
+mk_nmf inputs output = do
+  output ?=> \_ -> do
+    need $ map snd inputs
+    writeFileLines output $ [
+        "{"
+      , "  \"program\": {"
+      , intercalate "," (map program inputs)
+      , "    }"
+      , "  }"
+      , "}"
+      ]
+  return output
+  where
+    program (PNaCl, input) = unlines [
+        "    \"portable\": {"
+      , "      \"pnacl-translate\": {"
+      , "        \"url\": \"" ++ makeRelative (takeDirectory output) input ++ "\""
+      , "      }"
+      ]
+    program (NaCl arch, input) =
+      let archString = case arch of
+                        X86 X86_64 -> "x86_64"
+                        X86 _      -> "x86_32"
+                        Arm _      -> "arm"
+      in unlines [
+           "    \"" ++ archString ++ "\": {"
+         , "      \"url\": \"" ++ makeRelative (takeDirectory output) input ++ "\""
+         , "    }"
+         ]
