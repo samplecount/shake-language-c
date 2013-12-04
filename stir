@@ -1,42 +1,60 @@
-#!/bin/bash
-# Copyright 2012-2013 Samplecount S.L.
-# 
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# 
-#     http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env runhaskell
+-- Copyright 2013 Samplecount S.L.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
 
-rtsopts="+RTS -N -RTS"
+import           Control.Applicative ((<$>))
+import qualified Data.List as List
+import qualified Distribution.PackageDescription as Dist
+import qualified Distribution.PackageDescription.Parse as Dist
+import qualified Distribution.Verbosity as Dist
+import qualified System.Directory as Dir
+import qualified System.Environment as Env
+import           System.Exit (ExitCode(..))
+import           System.FilePath ((</>))
+import           System.Process (rawSystem)
 
-cabal_dev=`which cabal-dev`
-if [ -z "$cabal_dev" ]; then
-    cabal_dev="$HOME/.cabal/bin/cabal-dev"
-fi
+-- Not yet in process-1.1
+callProcess :: String -> [String] -> IO ()
+callProcess path args = do
+  exitCode <- rawSystem path args
+  case exitCode of
+    ExitSuccess -> return ()
+    ExitFailure code -> error $ path ++ " failed with exit code " ++ show code
 
-if [ ! -x "$cabal_dev" ]; then
-    echo "`basename $0`: cabal-dev executable not found"
-    exit 1
-fi
+shake :: String -> [String] -> IO ()
+shake exe args = callProcess ("./cabal-dev/bin" </> exe) $ rtsOpts ++ args
+  where rtsOpts = words "+RTS -N -RTS"
 
-function shakeit()
-{
-    ./cabal-dev/bin/shakefile $rtsopts "$@"
-}
+main :: IO ()
+main = do
+  cabal_dev <- maybe (error "cabal-dev executable not found") id
+                <$> Dir.findExecutable "cabal-dev"
 
-function shakeit_with_errors()
-{
-    shakeit "$@" 2>&1 | tee errors.err
-    return ${PIPESTATUS[0]}
-}
+  args <- Env.getArgs
 
-case $1 in
-    update) shift ; "$cabal_dev" install "$@" ;;
-    *) shakeit "$@" ;;
-esac
+  case args of
+    ("update":rest) ->
+      callProcess cabal_dev $ ["install"] ++ rest
+    _ -> do
+      cabalFiles <- filter (List.isSuffixOf ".cabal")
+                      <$> Dir.getDirectoryContents "."
+      case cabalFiles of
+        [] -> error "No cabal file found"
+        [cabalFile] -> do
+          exes <- (map fst . Dist.condExecutables) <$>
+                    Dist.readPackageDescription Dist.silent cabalFile
+          case exes of
+            [] -> error $ "No executables found in " ++ cabalFile
+            (exe:_) -> shake exe args
+        _ -> error $ "Multiple cabal files found: " ++ List.intercalate ", " cabalFiles
