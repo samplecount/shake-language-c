@@ -40,6 +40,7 @@ module Shakefile.C (
   , targetOS
   , targetPlatform
   , targetString
+  , isTargetOS
   , Language(..)
   , Linkage(..)
   , LinkResult(..)
@@ -199,6 +200,11 @@ targetString target =
      archShortString (target ^. targetArch)
   ++ "-" ++ (target ^. targetVendor)
   ++ "-" ++ (target ^. targetOS)
+
+isTargetOS :: Maybe String -> Maybe String -> Target -> Bool
+isTargetOS vendor os target =
+    maybe True (_targetVendor target ==) vendor
+ && maybe True (_targetOS target ==) os
 
 data Language = C | Cpp | ObjC | ObjCpp
                  deriving (Enum, Eq, Show)
