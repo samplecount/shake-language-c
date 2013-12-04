@@ -20,7 +20,7 @@ module Shakefile.C.Host (
   , getDefaultToolChain
 ) where
 
-import           Shakefile.C (Target, ToolChain)
+import           Shakefile.C (Target, ToolChain, notIf, onlyIf)
 import qualified Shakefile.C.Linux as Linux
 import qualified Shakefile.C.OSX as OSX
 import qualified System.Info as System
@@ -42,14 +42,10 @@ os =
     _ -> error $ "Unknown host operating system: " ++ System.os
 
 onlyOn :: [OS] -> (a -> a) -> (a -> a)
-onlyOn which f
-  | os `elem` which = f
-  | otherwise = id
+onlyOn which = onlyIf (os `elem` which)
 
 notOn :: [OS] -> (a -> a) -> (a -> a)
-notOn which f
-  | os `elem` which = id
-  | otherwise = f
+notOn which = notIf (os `elem` which)
 
 -- | Get host's default tool chain.
 getDefaultToolChain :: IO (Target, ToolChain)

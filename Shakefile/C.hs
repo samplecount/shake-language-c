@@ -20,6 +20,8 @@ module Shakefile.C (
   , mapFlag
   , concatMapFlag
   , (?=>)
+  , onlyIf
+  , notIf
   , Env
   , defaultEnv
   , buildPrefix
@@ -68,7 +70,6 @@ module Shakefile.C (
   , defaultBuildFlags
   , command
   , tool
-  , onlyFor
   , Archiver
   , defaultArchiver
   , Linker
@@ -111,6 +112,13 @@ concatMapFlag f = map (f++)
 -- Shake utils
 (?=>) :: FilePath -> (FilePath -> Shake.Action ()) -> Shake.Rules ()
 f ?=> a = (equalFilePath f) ?> a
+
+-- Function utils
+onlyIf :: Bool -> (a -> a) -> (a -> a)
+onlyIf b f = if b then f else id
+
+notIf :: Bool -> (a -> a) -> (a -> a)
+notIf b f = if b then id else f
 
 data Env = Env {
     _buildPrefix :: FilePath
@@ -320,11 +328,6 @@ toolChainFromEnvironment = do
         "llvm" -> LLVM
         "clang" -> LLVM
         _ -> Generic
-
-onlyFor :: ToolChain -> ToolChainVariant -> (a -> a) -> (a -> a)
-onlyFor toolChain wanted f
-  | wanted == toolChain ^. variant = f
-  | otherwise = id
 
 mkDefaultBuildFlags :: BuildFlags
 mkDefaultBuildFlags =
