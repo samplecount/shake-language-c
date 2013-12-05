@@ -12,8 +12,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Shakefile.C (
     under
@@ -82,7 +82,6 @@ module Shakefile.C (
 ) where
 
 import           Control.Applicative ((<$>))
-import           Control.Lens hiding (Action, (<.>), under)
 import           Control.Monad
 import           Data.Char (toLower)
 import           Development.Shake ((?>), need, readFile', system', systemOutput, want, writeFile')
@@ -90,7 +89,7 @@ import qualified Development.Shake as Shake
 import           Development.Shake.FilePath
 import           Data.Maybe
 import           Data.Version
-import           Shakefile.Lens (append)
+import           Shakefile.Label ((:->), append, get, mkLabel, set)
 import           Shakefile.SourceTree (SourceTree)
 import qualified Shakefile.SourceTree as SourceTree
 import           System.Environment (getEnvironment)
@@ -125,7 +124,7 @@ data Env = Env {
     _buildPrefix :: FilePath
   } deriving (Show)
 
-makeLenses ''Env
+mkLabel ''Env
 
 defaultEnv :: Env
 defaultEnv = Env "."
@@ -190,16 +189,16 @@ data Target = Target {
   , _targetPlatform :: Platform
   } deriving (Show)
 
-makeLenses ''Target
+mkLabel ''Target
 
 mkTarget :: Arch -> String -> String -> Platform -> Target
 mkTarget = Target
 
 targetString :: Target -> String
 targetString target =
-     archShortString (target ^. targetArch)
-  ++ "-" ++ (target ^. targetVendor)
-  ++ "-" ++ (target ^. targetOS)
+     archShortString (get targetArch target)
+  ++ "-" ++ get targetVendor target
+  ++ "-" ++ get targetOS target
 
 isTargetOS :: Maybe String -> Maybe String -> Target -> Bool
 isTargetOS vendor os target =
@@ -243,7 +242,7 @@ data BuildFlags = BuildFlags {
   , _archiverFlags :: [String]
   } deriving (Show)
 
-makeLenses ''BuildFlags
+mkLabel ''BuildFlags
 
 data ToolChainVariant =
     Generic
@@ -268,26 +267,26 @@ data ToolChain = ToolChain {
   , _defaultBuildFlags :: BuildFlags -> BuildFlags
   }
 
-makeLenses ''ToolChain
+mkLabel ''ToolChain
 
 defaultArchiver :: Archiver
 defaultArchiver toolChain buildFlags inputs output = do
     need inputs
     system' (tool archiverCmd toolChain)
-        $ buildFlags ^. archiverFlags
+        $ get archiverFlags buildFlags
         ++ [output]
         ++ inputs
 
 defaultLinker :: Linker
 defaultLinker toolChain buildFlags inputs output = do
-    let staticLibs = buildFlags ^. staticLibraries
+    let staticLibs = get staticLibraries buildFlags
     need $ inputs ++ staticLibs
     system' (tool linkerCmd toolChain)
           $  inputs
-          ++ buildFlags ^. linkerFlags
+          ++ get linkerFlags buildFlags
           ++ staticLibs
-          ++ concatMapFlag "-L" (buildFlags ^. libraryPath)
-          ++ concatMapFlag "-l" (buildFlags ^. libraries)
+          ++ concatMapFlag "-L" (get libraryPath buildFlags)
+          ++ concatMapFlag "-l" (get libraries buildFlags)
           ++ ["-o", output]
 
 defaultToolChain :: ToolChain
@@ -315,11 +314,11 @@ defaultToolChain =
 -- | Get the full path of an arbitrary toolchain command.
 command :: String -> ToolChain -> FilePath
 command cmd toolChain = maybe cmd (flip combine ("bin" </> cmd))
-                                  (toolChain ^. prefix)
+                                  (get prefix toolChain)
 
 -- | Get the full path of a predefined tool.
-tool :: (Getter ToolChain String) -> ToolChain -> FilePath
-tool getter toolChain = command (toolChain ^. getter) toolChain
+tool :: (ToolChain :-> String) -> ToolChain -> FilePath
+tool getter toolChain = command (get getter toolChain) toolChain
 
 toolChainFromEnvironment :: IO (ToolChain -> ToolChain)
 toolChainFromEnvironment = do
@@ -351,13 +350,15 @@ mkDefaultBuildFlags =
       }
 
 defineFlags :: BuildFlags -> [String]
-defineFlags = concatMapFlag "-D" . map (\(a, b) -> maybe a (\b' -> a++"="++b') b) . flip (^.) defines
+defineFlags = concatMapFlag "-D"
+            . map (\(a, b) -> maybe a (\b' -> a++"="++b') b)
+            . get defines
 
 compilerFlagsFor :: Maybe Language -> BuildFlags -> [String]
 compilerFlagsFor lang = concat
                       . maybe (map snd . filter (isNothing.fst))
                               (mapMaybe . f) lang
-                      . flip (^.) compilerFlags
+                      . get compilerFlags
     where f _ (Nothing, x) = Just x
           f l (Just l', x) | l == l' = Just x
                            | otherwise = Nothing
@@ -380,11 +381,11 @@ dependencyFile toolChain buildFlags input deps output = do
     output ?=> \_ -> do
         need $ [input] ++ deps
         system' (tool compilerCmd toolChain)
-                $  concatMapFlag "-I" (buildFlags ^. systemIncludes)
-                ++ mapFlag "-iquote" (buildFlags ^. userIncludes)
-                ++ (defineFlags buildFlags)
-                ++ (buildFlags ^. preprocessorFlags)
-                ++ (compilerFlagsFor (languageOf input) buildFlags)
+                $  concatMapFlag "-I" (get systemIncludes buildFlags)
+                ++ mapFlag "-iquote" (get userIncludes buildFlags)
+                ++ defineFlags buildFlags
+                ++ get preprocessorFlags buildFlags
+                ++ compilerFlagsFor (languageOf input) buildFlags
                 ++ ["-MM", "-o", output, input]
 
 parseDependencies :: String -> [FilePath]
@@ -400,23 +401,23 @@ staticObject toolChain buildFlags input deps output = do
         deps' <- parseDependencies <$> readFile' depFile
         need $ [input] ++ deps ++ deps'
         system' (tool compilerCmd toolChain)
-                $  concatMapFlag "-I" (buildFlags ^. systemIncludes)
-                ++ mapFlag "-iquote" (buildFlags ^. userIncludes)
-                ++ (defineFlags buildFlags)
-                ++ (buildFlags ^. preprocessorFlags)
-                ++ (compilerFlagsFor (languageOf input) buildFlags)
+                $  concatMapFlag "-I" (get systemIncludes buildFlags)
+                ++ mapFlag "-iquote" (get userIncludes buildFlags)
+                ++ defineFlags buildFlags
+                ++ get preprocessorFlags buildFlags
+                ++ compilerFlagsFor (languageOf input) buildFlags
                 ++ ["-c", "-o", output, input]
 
 sharedObject :: ObjectRule
 sharedObject toolChain = staticObject toolChain -- Disable for now: . append compilerFlags [(Nothing, ["-fPIC"])]
 
 mkObjectsDir :: Env -> Target -> FilePath -> FilePath
-mkObjectsDir env target path = (env ^. buildPrefix) </> map tr (makeRelative "/" path) ++ "_obj"
+mkObjectsDir env target path = get buildPrefix env </> map tr (makeRelative "/" path) ++ "_obj"
     where tr '.' = '_'
           tr x   = x
 
 mkBuildPath :: Env -> Target -> FilePath -> FilePath
-mkBuildPath env target path = (env ^. buildPrefix) </> makeRelative "/" path
+mkBuildPath env target path = get buildPrefix env </> makeRelative "/" path
 
 buildProduct :: ObjectRule -> Linker -> FilePath
              -> Env -> Target -> ToolChain
@@ -425,7 +426,7 @@ buildProduct :: ObjectRule -> Linker -> FilePath
 buildProduct object link fileName env target toolChain sources = do
     let resultPath = mkBuildPath env target fileName
         objectsDir = mkObjectsDir env target fileName
-        sources' = SourceTree.flags (toolChain ^. defaultBuildFlags) sources
+        sources' = SourceTree.flags (get defaultBuildFlags toolChain) sources
     objects <- forM (SourceTree.apply mkDefaultBuildFlags sources') $ \(buildFlags, (src, deps)) -> do
         let obj = objectsDir </> makeRelative "/" (src <.> "o")
         object toolChain buildFlags src deps obj
@@ -438,8 +439,8 @@ executable :: Env -> Target -> ToolChain -> String -> SourceTree BuildFlags -> S
 executable env target toolChain name sources =
     buildProduct
         staticObject
-        ((toolChain ^. linker) Executable)
-        ((toolChain ^. linkResultFileName) Executable name)
+        (get linker toolChain Executable)
+        (get linkResultFileName toolChain Executable name)
         env target toolChain sources
 
 -- | Rule for building a static library.
@@ -447,8 +448,8 @@ staticLibrary :: Env -> Target -> ToolChain -> String -> SourceTree BuildFlags -
 staticLibrary env target toolChain name sources =
     buildProduct
         staticObject
-        (toolChain ^. archiver)
-        ((toolChain ^. archiveFileName) name)
+        (get archiver toolChain)
+        (get archiveFileName toolChain name)
         env target toolChain sources
 
 -- | Rule for building a shared library.
@@ -456,8 +457,8 @@ sharedLibrary :: Env -> Target -> ToolChain -> String -> SourceTree BuildFlags -
 sharedLibrary env target toolChain name sources =
     buildProduct
         sharedObject
-        ((toolChain ^. linker) SharedLibrary)
-        ((toolChain ^. linkResultFileName) SharedLibrary name)
+        (get linker toolChain SharedLibrary)
+        (get linkResultFileName toolChain SharedLibrary name)
         env target toolChain sources
 
 -- | Rule for building a dynamic library.
@@ -465,6 +466,6 @@ dynamicLibrary :: Env -> Target -> ToolChain -> String -> SourceTree BuildFlags 
 dynamicLibrary env target toolChain name sources =
     buildProduct
         sharedObject
-        ((toolChain ^. linker) DynamicLibrary)
-        ((toolChain ^. linkResultFileName) DynamicLibrary name)
+        (get linker toolChain DynamicLibrary)
+        (get linkResultFileName toolChain DynamicLibrary name)
         env target toolChain sources

@@ -17,9 +17,9 @@ module Shakefile.C.Linux (
   , getDefaultToolChain
 ) where
 
-import Control.Lens
-import Development.Shake (need, system')
+import Data.Label (get, set)
 import Data.Version (Version(..))
+import Development.Shake (need, system')
 import Shakefile.C
 import System.Process (readProcess)
 
@@ -40,24 +40,24 @@ archiver_ toolChain buildFlags inputs output = do
     need inputs
     system' (tool archiverCmd toolChain)
           $  ["cr"]
-          ++ buildFlags ^. archiverFlags
+          ++ get archiverFlags buildFlags
           ++ [output]
           ++ inputs
     system' (command "ranlib" toolChain) [output]
 
 toolChain :: ToolChainVariant -> ToolChain
 toolChain GCC =
-    variant .~ GCC
-  $ compilerCmd .~ "gcc"
-  $ archiverCmd .~ "ar"
-  $ archiver .~ archiver_
-  $ linkerCmd .~ "g++"
+    set variant GCC
+  $ set compilerCmd "gcc"
+  $ set archiverCmd "ar"
+  $ set archiver archiver_
+  $ set linkerCmd "g++"
   $ defaultToolChain
 toolChain LLVM =
-    variant .~ LLVM
-  $ compilerCmd .~ "gcc"
-  $ archiverCmd .~ "ar"
-  $ linkerCmd .~ "g++"
+    set variant LLVM
+  $ set compilerCmd "gcc"
+  $ set archiverCmd "ar"
+  $ set linkerCmd "g++"
   $ defaultToolChain
 toolChain Generic = toolChain GCC
 

@@ -18,7 +18,7 @@ module Shakefile.C.PkgConfig (
 
 import Data.List (isSuffixOf)
 import Shakefile.C (BuildFlags, compilerFlags, linkerFlags)
-import Shakefile.Lens (append)
+import Shakefile.Label (append)
 import System.Exit (ExitCode(..))
 import System.Process (readProcessWithExitCode)
 

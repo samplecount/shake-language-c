@@ -28,7 +28,6 @@ module Shakefile.C.NaCl (
   , mk_nmf
 ) where
 
-import           Control.Lens hiding ((<.>))
 import           Data.List (intercalate)
 import           Development.Shake (Rules, need, system', writeFileLines)
 import           Development.Shake.FilePath
@@ -37,7 +36,7 @@ import           Shakefile.C hiding (Arch)
 import qualified Shakefile.C as C
 import           Shakefile.C.Host (OS(..))
 import qualified Shakefile.C.Host as Host
-import           Shakefile.Lens (append)
+import           Shakefile.Label (append, get, set)
 
 pepper :: Int -> Platform
 pepper apiVersion = Platform "pepper" (Version [apiVersion] [])
@@ -50,12 +49,12 @@ target = mkTarget LLVM_IR "google" "native-client"
 
 platformPrefix :: Target -> FilePath
 platformPrefix target =
-  platformName (target ^. targetPlatform)
+  platformName platform
   ++ "_"
   ++ case versionTags version of
       ["canary"] -> "canary"
       _          -> show $ head (versionBranch version)
-  where platform = target ^. targetPlatform
+  where platform = get targetPlatform target
         version = platformVersion platform
 
 hostString :: String
@@ -73,7 +72,7 @@ archiver_ toolChain buildFlags inputs output = do
     need inputs
     system' (tool archiverCmd toolChain)
           $  ["cr"]
-          ++ buildFlags ^. archiverFlags
+          ++ get archiverFlags buildFlags
           ++ [output]
           ++ inputs
     system' (command (pnaclTool "ranlib") toolChain) [output]
@@ -82,18 +81,18 @@ data Config = Debug | Release deriving (Eq, Show)
 
 toolChain :: FilePath -> Config -> Target -> ToolChain
 toolChain sdk config target =
-    variant .~ LLVM
-  $ prefix .~ Just (platformDir </> "toolchain" </> hostString ++ "_" ++ "pnacl")
-  $ compilerCmd .~ pnaclTool "clang"
-  $ archiverCmd .~ pnaclTool "ar"
-  $ archiver .~ archiver_
-  $ linkerCmd .~ pnaclTool "clang++"
-  $ linkResultFileName .~ (\linkResult ->
+    set variant LLVM
+  $ set prefix (Just (platformDir </> "toolchain" </> hostString ++ "_" ++ "pnacl"))
+  $ set compilerCmd (pnaclTool "clang")
+  $ set archiverCmd (pnaclTool "ar")
+  $ set archiver archiver_
+  $ set linkerCmd (pnaclTool "clang++")
+  $ set linkResultFileName (\linkResult ->
       case linkResult of
         Executable     -> (<.> "bc")
         SharedLibrary  -> ("lib"++) . (<.> "so")
         DynamicLibrary ->             (<.> "so"))
-  $ defaultBuildFlags .~
+  $ set defaultBuildFlags
       ( append userIncludes [platformDir </> "include"]
       . append libraryPath [platformDir </> "lib" </> "pnacl" </> show config] )
   $ defaultToolChain

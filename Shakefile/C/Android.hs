@@ -22,13 +22,12 @@ module Shakefile.C.Android (
   , native_app_glue
 ) where
 
-import           Control.Lens hiding ((<.>))
 import           Development.Shake.FilePath
 import           Data.Version (Version(..), showVersion)
 import           Shakefile.C
 import           Shakefile.SourceTree (SourceTree)
 import qualified Shakefile.SourceTree as SourceTree
-import           Shakefile.Lens (append)
+import           Shakefile.Label (get, set, append)
 import qualified System.Info as System
 
 platform :: Int -> Platform
@@ -36,7 +35,7 @@ platform apiVersion = Platform "android" (Version [apiVersion] [])
 
 toolChainPrefix :: Target -> String
 toolChainPrefix target =
-    case target ^. targetArch of
+    case get targetArch target of
         X86 _ -> "x86-"
         Arm _ -> "arm-linux-androideabi-"
 
@@ -51,21 +50,21 @@ target arch = mkTarget arch "linux" "androideabi"
 
 standaloneToolChain :: FilePath -> Target -> ToolChain
 standaloneToolChain path target =
-    prefix .~ Just path
-  $ compilerCmd .~ mkTool "gcc"
-  $ archiverCmd .~ mkTool "ar"
-  $ linkerCmd .~ mkTool "g++"
+    set prefix (Just path)
+  $ set compilerCmd (mkTool "gcc")
+  $ set archiverCmd (mkTool "ar")
+  $ set linkerCmd (mkTool "g++")
   $ defaultToolChain
   where mkTool x = targetString target ++ "-" ++ x
 
 toolChain :: FilePath -> ToolChainVariant -> Version -> Target -> ToolChain
 toolChain ndk GCC (Version [4,7] []) target =
-    variant .~ GCC
-  $ prefix .~ Just (ndk </> "toolchains" </> tcPrefix ++ "4.7" </> "prebuilt" </> osPrefix)
-  $ compilerCmd .~ mkTool "gcc"
-  $ archiverCmd .~ mkTool "ar"
-  $ linkerCmd .~ mkTool "g++"
-  $ defaultBuildFlags .~ mkDefaultBuildFlags ndk target
+    set variant GCC
+  $ set prefix (Just (ndk </> "toolchains" </> tcPrefix ++ "4.7" </> "prebuilt" </> osPrefix))
+  $ set compilerCmd (mkTool "gcc")
+  $ set archiverCmd (mkTool "ar")
+  $ set linkerCmd (mkTool "g++")
+  $ set defaultBuildFlags (mkDefaultBuildFlags ndk target)
   $ defaultToolChain
   where tcPrefix = toolChainPrefix target
         mkTool x = tcPrefix ++ x
@@ -73,10 +72,10 @@ toolChain _ variant version _ = error $ "Unknown tool chain variant " ++ show va
 
 androidPlatformPrefix :: Target -> FilePath
 androidPlatformPrefix target =
-    platformName (target ^. targetPlatform)
+    platformName (get targetPlatform target)
      ++ "-"
-     ++ show (head (versionBranch (platformVersion (target ^. targetPlatform))))
-    </> "arch-" ++ archShortString (target ^. targetArch)
+     ++ show (head (versionBranch (platformVersion (get targetPlatform target))))
+    </> "arch-" ++ archShortString (get targetArch target)
 
 androidArchString :: Arch -> String
 androidArchString (Arm Armv5) = "armv5te"
@@ -109,7 +108,7 @@ mkDefaultBuildFlags ndk target =
   . append linkerFlags ["-no-canonical-prefixes"]
   . append archiverFlags ["-rs"]
   where
-    arch = target ^. targetArch
+    arch = get targetArch target
     sysroot = "--sysroot=" ++ ndk </> "platforms" </> androidPlatformPrefix target
     march = "-march=" ++ androidArchString arch
 
@@ -129,7 +128,7 @@ gnustl linkage ndk target =
   . append libraryPath [stlPath </> "libs" </> abi]
   . append libraries [lib]
     where stlPath = ndk </> "sources/cxx-stl/gnu-libstdc++/4.7"
-          abi = abiString (target ^. targetArch)
+          abi = abiString (get targetArch target)
           lib = case linkage of
                   Static -> "gnustl_static"
                   Shared -> "gnustl_shared"

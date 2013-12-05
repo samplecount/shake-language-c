@@ -30,26 +30,25 @@ module Shakefile.C.OSX (
 ) where
 
 import           Control.Applicative ((<$>))
-import           Control.Lens hiding ((<.>))
-import           Development.Shake as Shake
-import           Development.Shake.FilePath
 import           Data.List.Split (splitOn)
 import           Data.Version (Version(..), showVersion)
+import           Development.Shake as Shake
+import           Development.Shake.FilePath
 import           Shakefile.C
-import           Shakefile.Lens (append, prepend)
+import           Shakefile.Label (append, get, prepend, set)
 import           System.Process (readProcess)
 
 osxArchiver :: Archiver
 osxArchiver toolChain buildFlags inputs output = do
     need inputs
     system' (tool archiverCmd toolChain)
-          $  buildFlags ^. archiverFlags
+          $  get archiverFlags buildFlags
           ++ ["-static"]
           ++ ["-o", output]
           ++ inputs
 
 archFlags :: Target -> [String]
-archFlags target = ["-arch", (archString $ target ^. targetArch)]
+archFlags target = ["-arch", archString (get targetArch target)]
 
 osxLinker :: LinkResult -> Linker
 osxLinker link toolChain =
@@ -105,35 +104,35 @@ getDefaultToolChain = do
 
 toolChain :: DeveloperPath -> Target -> ToolChain
 toolChain developer target =
-    variant .~ LLVM
-  $ prefix .~ Just (developerPath developer </> "Toolchains/XcodeDefault.xctoolchain/usr")
-  $ compilerCmd .~ "clang"
-  $ archiverCmd .~ "libtool"
-  $ archiver .~ osxArchiver
-  $ linkerCmd .~ "clang++"
-  $ linker .~ osxLinker
-  $ linkResultFileName .~ (\linkResult ->
+    set variant LLVM
+  $ set prefix (Just (developerPath developer </> "Toolchains/XcodeDefault.xctoolchain/usr"))
+  $ set compilerCmd "clang"
+  $ set archiverCmd "libtool"
+  $ set archiver osxArchiver
+  $ set linkerCmd "clang++"
+  $ set linker osxLinker
+  $ set linkResultFileName (\linkResult ->
       case linkResult of
         Executable     -> id
         SharedLibrary  -> ("lib"++) . (<.> "dylib")
         DynamicLibrary ->             (<.> "dylib"))
-  $ defaultBuildFlags .~ ( append preprocessorFlags [ "-isysroot", sysRoot ]
-                         . append compilerFlags [(Nothing, archFlags target)]
-                         . append linkerFlags (archFlags target ++ [ "-isysroot", sysRoot ]) )
+  $ set defaultBuildFlags ( append preprocessorFlags [ "-isysroot", sysRoot ]
+                          . append compilerFlags [(Nothing, archFlags target)]
+                          . append linkerFlags (archFlags target ++ [ "-isysroot", sysRoot ]) )
   $ defaultToolChain
-  where sysRoot = platformSDKPath developer (target ^. targetPlatform)
+  where sysRoot = platformSDKPath developer (get targetPlatform target)
 
 macosx_version_min :: Version -> BuildFlags -> BuildFlags
 macosx_version_min version = append compilerFlags [(Nothing, ["-mmacosx-version-min=" ++ showVersion version])]
 
 macosx_version_target :: Target -> BuildFlags -> BuildFlags
-macosx_version_target = macosx_version_min . platformVersion . flip (^.) targetPlatform
+macosx_version_target = macosx_version_min . platformVersion . get targetPlatform
 
 iphoneos_version_min :: Version -> BuildFlags -> BuildFlags
 iphoneos_version_min version = append compilerFlags [(Nothing, ["-miphoneos-version-min=" ++ showVersion version])]
 
 iphoneos_version_target :: Target -> BuildFlags -> BuildFlags
-iphoneos_version_target = iphoneos_version_min . platformVersion . flip (^.) targetPlatform
+iphoneos_version_target = iphoneos_version_min . platformVersion . get targetPlatform
 
 universalBinary :: [FilePath] -> FilePath -> Rules FilePath
 universalBinary inputs output = do
