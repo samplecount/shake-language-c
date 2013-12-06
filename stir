@@ -14,6 +14,8 @@
 -- limitations under the License.
 
 import           Control.Applicative ((<$>))
+import           Control.Monad (when)
+import           Data.Char (toLower)
 import qualified Data.List as List
 import qualified Data.List.Split as List
 import qualified Distribution.PackageDescription as Dist
@@ -27,6 +29,63 @@ import           System.FilePath ((</>))
 import           System.IO (hPutStrLn, stderr)
 import           System.Process (rawSystem)
 
+-- Cabal configuration fields:
+
+configFieldPackageDirs :: String
+configFieldPackageDirs = "x-stir-package-dirs"
+
+configFieldSandbox :: String
+configFieldSandbox = "x-stir-sandbox"
+
+configFieldSandboxCommand :: String
+configFieldSandboxCommand = "x-stir-sandbox-command"
+
+-- Not yet in process-1.1
+callProcess :: String -> [String] -> IO ()
+callProcess path args = do
+  exitCode <- rawSystem path args
+  case exitCode of
+    ExitSuccess -> return ()
+    ExitFailure code -> error $ path ++ " failed with exit code " ++ show code
+
+data Sandbox = Sandbox {
+    update :: [FilePath] -> [String] -> IO ()
+  , build :: String -> [String] -> IO ()
+  , clean :: IO ()
+  }
+
+findExecutable :: String -> IO FilePath
+findExecutable exe = maybe (error $ exe ++ " executable not found") id
+                        <$> Dir.findExecutable exe
+
+mkCabalDevSandbox :: Maybe FilePath -> IO Sandbox
+mkCabalDevSandbox cmdPath = do
+  cmd <- maybe (findExecutable "cabal-dev") return cmdPath
+  let sandboxDir = "cabal-dev"
+  return $ Sandbox {
+      update = \sources args -> do
+        mapM_ (\dir -> callProcess cmd ["add-source", dir])
+              sources
+        callProcess cmd $ ["install"] ++ args
+    , build = \exe -> callProcess (sandboxDir </> "bin" </> exe)
+    , clean = do
+        b <- Dir.doesDirectoryExist sandboxDir
+        when b $ Dir.removeDirectoryRecursive sandboxDir
+    }
+
+mkCabalSandbox :: Maybe FilePath -> IO Sandbox
+mkCabalSandbox cmdPath = do
+  cmd <- maybe (findExecutable "cabal") return cmdPath
+  return $ Sandbox {
+      update = \sources args -> do
+        callProcess cmd ["sandbox", "init"]
+        mapM_ (\dir -> callProcess cmd ["sandbox", "add-source", "--snapshot", dir])
+              sources
+        callProcess cmd $ ["install"] ++ args
+    , build = \exe -> callProcess (".cabal-sandbox" </> "bin" </> exe)
+    , clean = callProcess cmd ["sandbox", "clean"]
+    }
+
 getCabalFile :: IO (FilePath, Dist.PackageDescription)
 getCabalFile = do
   cabalFiles <- filter (List.isSuffixOf ".cabal")
@@ -39,43 +98,42 @@ getCabalFile = do
                 <$> Dist.readPackageDescription Dist.silent cabalFile
         return (cabalFile, pkg)
 
-packageDirs :: [(String, String)] -> [FilePath]
-packageDirs = maybe [] id
-           . fmap (List.wordsBy (==','))
-           . lookup "x-stir-package-dirs"
+configPackageDirs :: [(String, String)] -> [FilePath]
+configPackageDirs = maybe [] id
+                  . fmap (List.wordsBy (==','))
+                  . lookup configFieldPackageDirs
 
--- Not yet in process-1.1
-callProcess :: String -> [String] -> IO ()
-callProcess path args = do
-  exitCode <- rawSystem path args
-  case exitCode of
-    ExitSuccess -> return ()
-    ExitFailure code -> error $ path ++ " failed with exit code " ++ show code
-
-build :: String -> [String] -> IO ()
-build exe args = callProcess ("./cabal-dev/bin" </> exe) $ rtsOpts ++ args
-  where rtsOpts = words "+RTS -N -RTS"
+configSandbox :: [(String, String)] -> IO Sandbox
+configSandbox vars =
+  case lookup configFieldSandbox vars of
+    Nothing -> mkCabalDevSandbox command
+    Just sandbox ->
+      case map toLower sandbox of
+        "cabal-dev" -> mkCabalDevSandbox command
+        "cabal"     -> mkCabalSandbox command
+        _           -> error $ "Unknown sandbox type " ++ sandbox
+  where command = lookup configFieldSandboxCommand vars
 
 main :: IO ()
 main = do
   (cabalFile, pkg) <- getCabalFile
+  let config = Dist.customFieldsPD pkg
 
-  cabal_dev <- maybe (error "cabal-dev executable not found") id
-                <$> Dir.findExecutable "cabal-dev"
+  sandbox <- configSandbox config
 
   args <- Env.getArgs
-
   case args of
     ("update":rest) -> do
-      mapM_ (\dir -> callProcess cabal_dev ["add-source", dir])
-            (packageDirs (Dist.customFieldsPD pkg))
-      callProcess cabal_dev $ [ "install"
-                              , "--upgrade-dependencies"
-                              -- These might be defined in the user's cabal config file and effectively double compilation times
-                              , "--disable-library-profiling"
-                              , "--disable-executable-profiling"]
-                              ++ rest
+      update sandbox
+             (configPackageDirs config) $
+             [ "--upgrade-dependencies"
+             -- These might be defined in the user's cabal config file and effectively double compilation times
+             , "--disable-library-profiling"
+             , "--disable-executable-profiling" ]
+             ++ rest
     _ -> do
       case Dist.executables pkg of
         [] -> error $ "No executables found in " ++ cabalFile
-        (exe:_) -> build (Dist.exeName exe) args
+        (exe:_) -> build sandbox
+                      (Dist.exeName exe)
+                      (["+RTS", "-N", "-RTS"] ++ args)
