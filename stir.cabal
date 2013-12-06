@@ -14,7 +14,16 @@
 
 Name: stir
 Version: 0.1.1
-Cabal-Version: >= 1.2
+Synopsis: Build system based on shake
+Description: Stir is a build system based on shake with a focus on cross-compiling C/C++/ObjC code for various target platforms. The list of supported platforms includes Android, Linux, MacOS X, iOS and Google Native Client.
+Category: Development
+License: Apache-2.0
+License-File: LICENSE
+
+Copyright: Copyright (c) 2012-2013 Samplecount S.L.
+Maintainer: stefan@samplecount.com
+
+Cabal-Version: >= 1.4
 Build-Type: Simple
 Library
   Hs-Source-Dirs: .
@@ -29,7 +38,7 @@ Library
     Shakefile.Configuration
     Shakefile.Label
     Shakefile.SourceTree
-  Ghc-Options: -Wall -rtsopts -threaded
+  Ghc-Options: -Wall
   Build-Depends:
       base >= 4 && < 5
     , directory
