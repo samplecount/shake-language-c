@@ -15,14 +15,34 @@
 
 import           Control.Applicative ((<$>))
 import qualified Data.List as List
+import qualified Data.List.Split as List
 import qualified Distribution.PackageDescription as Dist
+import qualified Distribution.PackageDescription.Configuration as Dist
 import qualified Distribution.PackageDescription.Parse as Dist
 import qualified Distribution.Verbosity as Dist
 import qualified System.Directory as Dir
 import qualified System.Environment as Env
-import           System.Exit (ExitCode(..))
+import           System.Exit (ExitCode(..), exitFailure)
 import           System.FilePath ((</>))
+import           System.IO (hPutStrLn, stderr)
 import           System.Process (rawSystem)
+
+getCabalFile :: IO (FilePath, Dist.PackageDescription)
+getCabalFile = do
+  cabalFiles <- filter (List.isSuffixOf ".cabal")
+                  <$> Dir.getDirectoryContents "."
+  case cabalFiles of
+    [] -> error "No cabal file found"
+    (_:_:_) -> error $ "Multiple cabal files found: " ++ List.intercalate ", " cabalFiles
+    [cabalFile] -> do
+        pkg <- Dist.flattenPackageDescription
+                <$> Dist.readPackageDescription Dist.silent cabalFile
+        return (cabalFile, pkg)
+
+packageDirs :: [(String, String)] -> [FilePath]
+packageDirs = maybe [] id
+           . fmap (List.wordsBy (==','))
+           . lookup "x-stir-package-dirs"
 
 -- Not yet in process-1.1
 callProcess :: String -> [String] -> IO ()
@@ -32,33 +52,30 @@ callProcess path args = do
     ExitSuccess -> return ()
     ExitFailure code -> error $ path ++ " failed with exit code " ++ show code
 
-shake :: String -> [String] -> IO ()
-shake exe args = callProcess ("./cabal-dev/bin" </> exe) $ rtsOpts ++ args
+build :: String -> [String] -> IO ()
+build exe args = callProcess ("./cabal-dev/bin" </> exe) $ rtsOpts ++ args
   where rtsOpts = words "+RTS -N -RTS"
 
 main :: IO ()
 main = do
+  (cabalFile, pkg) <- getCabalFile
+
   cabal_dev <- maybe (error "cabal-dev executable not found") id
                 <$> Dir.findExecutable "cabal-dev"
 
   args <- Env.getArgs
 
   case args of
-    ("update":rest) ->
+    ("update":rest) -> do
+      mapM_ (\dir -> callProcess cabal_dev ["add-source", dir])
+            (packageDirs (Dist.customFieldsPD pkg))
       callProcess cabal_dev $ [ "install"
+                              , "--upgrade-dependencies"
                               -- These might be defined in the user's cabal config file and effectively double compilation times
                               , "--disable-library-profiling"
                               , "--disable-executable-profiling"]
                               ++ rest
     _ -> do
-      cabalFiles <- filter (List.isSuffixOf ".cabal")
-                      <$> Dir.getDirectoryContents "."
-      case cabalFiles of
-        [] -> error "No cabal file found"
-        [cabalFile] -> do
-          exes <- (map fst . Dist.condExecutables) <$>
-                    Dist.readPackageDescription Dist.silent cabalFile
-          case exes of
-            [] -> error $ "No executables found in " ++ cabalFile
-            (exe:_) -> shake exe args
-        _ -> error $ "Multiple cabal files found: " ++ List.intercalate ", " cabalFiles
+      case Dist.executables pkg of
+        [] -> error $ "No executables found in " ++ cabalFile
+        (exe:_) -> build (Dist.exeName exe) args
