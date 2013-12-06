@@ -45,7 +45,11 @@ main = do
 
   case args of
     ("update":rest) ->
-      callProcess cabal_dev $ ["install"] ++ rest
+      callProcess cabal_dev $ [ "install"
+                              -- These might be defined in the user's cabal config file and effectively double compilation times
+                              , "--disable-library-profiling"
+                              , "--disable-executable-profiling"]
+                              ++ rest
     _ -> do
       cabalFiles <- filter (List.isSuffixOf ".cabal")
                       <$> Dir.getDirectoryContents "."
