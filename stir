@@ -17,7 +17,6 @@ import           Control.Applicative ((<$>))
 import           Control.Monad (when)
 import           Data.Char (toLower)
 import qualified Data.List as List
-import qualified Data.List.Split as List
 import qualified Distribution.PackageDescription as Dist
 import qualified Distribution.PackageDescription.Configuration as Dist
 import qualified Distribution.PackageDescription.Parse as Dist
@@ -100,7 +99,7 @@ getCabalFile = do
 
 configPackageDirs :: [(String, String)] -> [FilePath]
 configPackageDirs = maybe [] id
-                  . fmap (List.wordsBy (==','))
+                  . fmap lines
                   . lookup configFieldPackageDirs
 
 configSandbox :: [(String, String)] -> IO Sandbox
