@@ -82,7 +82,7 @@ mkCabalSandbox cmdPath = do
               sources
         callProcess cmd $ ["install"] ++ args
     , build = \exe -> callProcess (".cabal-sandbox" </> "bin" </> exe)
-    , clean = callProcess cmd ["sandbox", "clean"]
+    , clean = callProcess cmd ["sandbox", "delete"]
     }
 
 getCabalFile :: IO (FilePath, Dist.PackageDescription)
@@ -130,6 +130,8 @@ main = do
              , "--disable-library-profiling"
              , "--disable-executable-profiling" ]
              ++ rest
+    ["clean-stir"] ->
+      clean sandbox
     _ -> do
       case Dist.executables pkg of
         [] -> error $ "No executables found in " ++ cabalFile
