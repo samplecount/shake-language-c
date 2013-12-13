@@ -78,7 +78,7 @@ mkCabalSandbox cmdPath = do
   return $ Sandbox {
       update = \sources args -> do
         callProcess cmd ["sandbox", "init"]
-        mapM_ (\dir -> callProcess cmd ["sandbox", "add-source", "--snapshot", dir])
+        mapM_ (\dir -> callProcess cmd ["sandbox", "add-source", dir])
               sources
         callProcess cmd $ ["install"] ++ args
     , build = \exe -> callProcess (".cabal-sandbox" </> "bin" </> exe)
@@ -125,9 +125,9 @@ main = do
     ("update":rest) -> do
       update sandbox
              (configPackageDirs config) $
-             [ "--upgrade-dependencies"
+             [ -- "--upgrade-dependencies"
              -- These might be defined in the user's cabal config file and effectively double compilation times
-             , "--disable-library-profiling"
+               "--disable-library-profiling"
              , "--disable-executable-profiling" ]
              ++ rest
     ["clean-stir"] ->
