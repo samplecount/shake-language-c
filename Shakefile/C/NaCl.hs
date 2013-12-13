@@ -101,12 +101,11 @@ toolChain sdk config target =
 -- | Finalize a bit code executable.
 finalize :: ToolChain -> FilePath -> FilePath -> Rules FilePath
 finalize toolChain input output = do
-  let pexe = replaceExtension output "pexe"
-  pexe ?=> \_ -> do
+  output ?=> \_ -> do
     need [input]
     system' (command (pnaclTool "finalize") toolChain)
-            ["-o", pexe, input]
-  return pexe
+            ["-o", output, input]
+  return output
 
 -- | Translate bit code to native code.
 translate :: ToolChain -> C.Arch -> FilePath -> FilePath -> Rules FilePath
