@@ -53,7 +53,7 @@ module Shakefile.C (
   , libraryPath
   , libraries
   , linkerFlags
-  , staticLibraries
+  , localLibraries
   , archiverFlags
   , ToolChain
   , ToolChainVariant(..)
@@ -89,7 +89,7 @@ import qualified Development.Shake as Shake
 import           Development.Shake.FilePath
 import           Data.Maybe
 import           Data.Version
-import           Shakefile.Label ((:->), append, get, mkLabel, set)
+import           Shakefile.Label ((:->), append, get, mkLabel, prepend, set)
 import           Shakefile.SourceTree (SourceTree)
 import qualified Shakefile.SourceTree as SourceTree
 import           System.Environment (getEnvironment)
@@ -237,8 +237,7 @@ data BuildFlags = BuildFlags {
   , _libraries :: [String]
   , _linkerFlags :: [String]
   -- This is needed for linking against local libraries built by shake (the linker `needs' its inputs).
-  -- A better name maybe?
-  , _staticLibraries :: [FilePath]
+  , _localLibraries :: [FilePath]
   , _archiverFlags :: [String]
   } deriving (Show)
 
@@ -279,15 +278,21 @@ defaultArchiver toolChain buildFlags inputs output = do
 
 defaultLinker :: Linker
 defaultLinker toolChain buildFlags inputs output = do
-    let staticLibs = get staticLibraries buildFlags
-    need $ inputs ++ staticLibs
+    let localLibs = get localLibraries buildFlags
+        buildFlags' = append libraryPath (map takeDirectory localLibs)
+                      -- Local libraries must be passed to the linker before system libraries they depend on
+                    . prepend libraries (map (strip.dropExtension.takeFileName) localLibs)
+                    $ buildFlags
+    need $ inputs ++ localLibs
     system' (tool linkerCmd toolChain)
           $  inputs
-          ++ get linkerFlags buildFlags
-          ++ staticLibs
-          ++ concatMapFlag "-L" (get libraryPath buildFlags)
-          ++ concatMapFlag "-l" (get libraries buildFlags)
+          ++ get linkerFlags buildFlags'
+          ++ concatMapFlag "-L" (get libraryPath buildFlags')
+          ++ concatMapFlag "-l" (get libraries buildFlags')
           ++ ["-o", output]
+    where
+      strip ('l':'i':'b':rest) = rest
+      strip x = x
 
 defaultToolChain :: ToolChain
 defaultToolChain =
@@ -345,7 +350,7 @@ mkDefaultBuildFlags =
       , _libraryPath = []
       , _libraries = []
       , _linkerFlags = []
-      , _staticLibraries = []
+      , _localLibraries = []
       , _archiverFlags = []
       }
 
