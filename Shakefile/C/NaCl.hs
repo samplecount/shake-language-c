@@ -150,14 +150,15 @@ mk_nmf inputs output = do
     writeFileLines output $ [
         "{"
       , "  \"program\": {"
-      , intercalate "," (map program inputs)
-      , "    }"
+      ]
+      ++ intercalate [","] (map program inputs) ++
+      [ "    }"
       , "  }"
       , "}"
       ]
   return output
   where
-    program (PNaCl, input) = unlines [
+    program (PNaCl, input) = [
         "    \"portable\": {"
       , "      \"pnacl-translate\": {"
       , "        \"url\": \"" ++ makeRelative (takeDirectory output) input ++ "\""
@@ -168,7 +169,7 @@ mk_nmf inputs output = do
                         X86 X86_64 -> "x86_64"
                         X86 _      -> "x86_32"
                         Arm _      -> "arm"
-      in unlines [
+      in [
            "    \"" ++ archString ++ "\": {"
          , "      \"url\": \"" ++ makeRelative (takeDirectory output) input ++ "\""
          , "    }"
