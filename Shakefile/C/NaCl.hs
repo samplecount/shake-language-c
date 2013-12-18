@@ -93,10 +93,13 @@ toolChain sdk config target =
         SharedLibrary  -> ("lib"++) . (<.> "so")
         DynamicLibrary ->             (<.> "so"))
   $ set defaultBuildFlags
-      ( append userIncludes [platformDir </> "include"]
+      ( append systemIncludes [includeDir]
+      . append userIncludes [includeDir]
+      . append systemIncludes [includeDir </> "pnacl"]
       . append libraryPath [platformDir </> "lib" </> "pnacl" </> show config] )
   $ defaultToolChain
   where platformDir = sdk </> platformPrefix target
+        includeDir = platformDir </> "include"
 
 -- | Finalize a bit code executable.
 finalize :: ToolChain -> FilePath -> FilePath -> Rules FilePath
