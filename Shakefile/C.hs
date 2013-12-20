@@ -129,9 +129,9 @@ mkLabel ''Env
 defaultEnv :: Env
 defaultEnv = Env "."
 
-defaultBuildPrefix :: Target -> String -> FilePath
-defaultBuildPrefix target config =
-      "build"
+defaultBuildPrefix :: FilePath -> Target -> String -> FilePath
+defaultBuildPrefix buildDir target config =
+      buildDir
   </> map toLower config
   </> (platformString $ _targetPlatform target)
   </> (archString $ _targetArch target)
