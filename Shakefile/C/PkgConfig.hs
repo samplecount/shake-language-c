@@ -13,7 +13,9 @@
 -- limitations under the License.
 
 module Shakefile.C.PkgConfig (
-    pkgConfig
+    Options(..)
+  , pkgConfigWithOptions
+  , pkgConfig
 ) where
 
 import Data.List (isPrefixOf, isSuffixOf)
@@ -62,19 +64,27 @@ parseFlags = unescape . words . head . lines
       | isEscaped x1 = unescape ((dropEscape x1 ++ x2):xs)
       | otherwise = [x1] ++ unescape (x2:xs)
 
-pkgConfig :: String -> IO (BuildFlags -> BuildFlags)
-pkgConfig pkg = do
-    (code1, cflags, _) <- readProcessWithExitCode "pkg-config" ["--cflags", pkg] ""
-    case code1 of
-        ExitSuccess -> do
-            (code2, ldflags, _) <- readProcessWithExitCode "pkg-config" ["--libs", pkg] ""
-            case code2 of
-                ExitSuccess ->
-                    return $ parseCflags (parseFlags cflags)
-                           . parseLibs (parseFlags ldflags)
-                _ -> notFound
+data Options = Options {
+    static :: Bool
+  } deriving (Eq, Show)
+
+pkgConfigWithOptions :: Options -> String -> IO (BuildFlags -> BuildFlags)
+pkgConfigWithOptions options pkg = do
+  let flags = if static options then ["--static"] else []
+  (code1, cflags, _) <- readProcessWithExitCode "pkg-config" (flags ++ ["--cflags", pkg]) ""
+  case code1 of
+    ExitSuccess -> do
+      (code2, ldflags, _) <- readProcessWithExitCode "pkg-config" (flags ++ ["--libs", pkg]) ""
+      case code2 of
+        ExitSuccess ->
+          return $ parseCflags (parseFlags cflags)
+                 . parseLibs (parseFlags ldflags)
         _ -> notFound
-    where
-        notFound = do
-            putStrLn $ "WARNING: package " ++ pkg ++ " not found (pkgconfig)"
-            return id
+    _ -> notFound
+  where
+    notFound = do
+      putStrLn $ "WARNING: package " ++ pkg ++ " not found (pkgconfig)"
+      return id
+
+pkgConfig :: String -> IO (BuildFlags -> BuildFlags)
+pkgConfig = pkgConfigWithOptions (Options False)
