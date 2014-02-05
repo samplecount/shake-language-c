@@ -79,12 +79,10 @@ pkgConfigWithOptions options pkg = do
         ExitSuccess ->
           return $ parseCflags (parseFlags cflags)
                  . parseLibs (parseFlags ldflags)
-        _ -> notFound
-    _ -> notFound
+        _ -> return notFound
+    _ -> return notFound
   where
-    notFound = do
-      putStrLn $ "WARNING: package " ++ pkg ++ " not found (pkgconfig)"
-      return id
+    notFound = const $ error $ "pkg-config: package " ++ pkg ++ " not found"
 
 pkgConfig :: String -> IO (BuildFlags -> BuildFlags)
 pkgConfig = pkgConfigWithOptions (Options False)
