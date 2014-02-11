@@ -58,9 +58,12 @@ standaloneToolChain path target =
   where mkTool x = targetString target ++ "-" ++ x
 
 toolChain :: FilePath -> ToolChainVariant -> Version -> Target -> ToolChain
-toolChain ndk GCC (Version [4,7] []) target =
+toolChain ndk GCC version target =
     set variant GCC
-  $ set prefix (Just (ndk </> "toolchains" </> tcPrefix ++ "4.7" </> "prebuilt" </> osPrefix))
+  $ set prefix (Just (ndk </> "toolchains"
+                          </> tcPrefix ++ showVersion version
+                          </> "prebuilt"
+                          </> osPrefix))
   $ set compilerCmd (mkTool "gcc")
   $ set archiverCmd (mkTool "ar")
   $ set linkerCmd (mkTool "g++")
@@ -122,12 +125,12 @@ native_app_glue :: FilePath -> SourceTree BuildFlags
 native_app_glue ndk = SourceTree.flags (append systemIncludes [ndk </> "sources/android/native_app_glue"])
                         (SourceTree.files [ndk </> "sources/android/native_app_glue/android_native_app_glue.c"])
 
-gnustl :: Linkage -> FilePath -> Target -> BuildFlags -> BuildFlags
-gnustl linkage ndk target =
+gnustl :: Version -> Linkage -> FilePath -> Target -> BuildFlags -> BuildFlags
+gnustl version linkage ndk target =
     append systemIncludes [stlPath </> "include", stlPath </> "libs" </> abi </> "include"]
   . append libraryPath [stlPath </> "libs" </> abi]
   . append libraries [lib]
-    where stlPath = ndk </> "sources/cxx-stl/gnu-libstdc++/4.7"
+    where stlPath = ndk </> "sources/cxx-stl/gnu-libstdc++" </> showVersion version
           abi = abiString (get targetArch target)
           lib = case linkage of
                   Static -> "gnustl_static"
