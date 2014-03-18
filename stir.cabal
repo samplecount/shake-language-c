@@ -47,5 +47,6 @@ Library
     , filemanip
     , filepath
     , process
+    , setenv
     , shake >= 0.10
     , split
