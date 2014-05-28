@@ -16,6 +16,7 @@ module Shakefile.C.OSX (
     DeveloperPath
   , getDeveloperPath
   , getSystemVersion
+  , getLatestPlatform
   , macOSX
   , iPhoneOS
   , iPhoneSimulator
@@ -30,12 +31,14 @@ module Shakefile.C.OSX (
 ) where
 
 import           Control.Applicative ((<$>))
+import           Data.List (stripPrefix)
 import           Data.List.Split (splitOn)
 import           Data.Version (Version(..), showVersion)
 import           Development.Shake as Shake
 import           Development.Shake.FilePath
 import           Shakefile.C
 import           Shakefile.Label (append, get, prepend, set)
+import qualified System.Directory as Dir
 import           System.Process (readProcess)
 
 osxArchiver :: Archiver
@@ -87,6 +90,19 @@ platformSDKPath developer platform =
   </> "SDKs"
   </> (name ++ showVersion (platformVersion platform) ++ ".sdk")
   where name = platformName platform
+
+getLatestPlatform :: DeveloperPath -> (Version -> Platform) -> IO Platform
+getLatestPlatform developer mkPlatform = do
+  dirs <- Dir.getDirectoryContents $ platformDeveloperPath developer name </> "SDKs"
+  let maxVersion = case [ x | Just x <- map (fmap (  map read {- slip in an innocent read, can't fail, can it? -}
+                                                   . splitOn "."
+                                                   . dropExtension)
+                                                  . stripPrefix name)
+                                            dirs ] of
+                      [] -> error "OSX: No SDK found"
+                      xs -> maximum xs
+  return $ mkPlatform $ Version maxVersion []
+  where name = platformName (mkPlatform (Version [] []))
 
 -- | Get OSX system version (first two digits).
 getSystemVersion :: IO Version
