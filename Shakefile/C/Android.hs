@@ -89,7 +89,7 @@ androidArchString arch = archString arch
 archCompilerFlags :: Arch -> [(Maybe Language, [String])]
 archCompilerFlags (Arm Armv7) = [(Nothing, ["-mfloat-abi=softfp", "-mfpu=neon" {- vfpv3-d16 -}])]
 archCompilerFlags (Arm _)     = [(Nothing, ["-mtune=xscale", "-msoft-float"])]
-archCompilerFlags _ = []
+archCompilerFlags _           = []
 
 archLinkerFlags :: Arch -> [String]
 archLinkerFlags arch =
