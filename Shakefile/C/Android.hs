@@ -69,9 +69,35 @@ toolChain ndk GCC version target =
   $ set linkerCmd (mkTool "g++")
   $ set defaultBuildFlags (mkDefaultBuildFlags ndk target)
   $ defaultToolChain
-  where tcPrefix = toolChainPrefix target
-        mkTool x = tcPrefix ++ x
-toolChain _ variant version _ = error $ "Unknown tool chain variant " ++ show variant ++ " " ++ showVersion version
+  where
+    tcPrefix = toolChainPrefix target
+    mkTool x = tcPrefix ++ x
+toolChain ndk LLVM version target =
+    set variant LLVM
+  $ set prefix (Just (ndk </> "toolchains"
+                          </> "llvm-" ++ showVersion version
+                          </> "prebuilt"
+                          </> osPrefix))
+  $ set compilerCmd "clang"
+  $ set archiverCmd "llvm-ar"
+  $ set linkerCmd "clang++"
+  $ set defaultBuildFlags (  mkDefaultBuildFlags ndk target
+                           . append compilerFlags [(Nothing, ["-target", llvmTarget target]),
+                                                   (Nothing, ["-gcc-toolchain", ndk </> "toolchains/arm-linux-androideabi-4.8/prebuilt" </> osPrefix])
+                                                  ])
+  $ defaultToolChain
+  where
+    llvmTarget target =
+      case get targetArch target of
+        Arm Armv5 -> "armv5te-none-linux-androideabi"
+        Arm Armv7 -> "armv7-none-linux-androideabi"
+        X86 I386 -> "i686-none-linux-android"
+        _ -> error "Unsupported LLVM target architecture"
+
+toolChain _ variant version _ =
+  error $ "Unknown tool chain variant "
+        ++ show variant ++ " "
+        ++ showVersion version
 
 androidPlatformPrefix :: Target -> FilePath
 androidPlatformPrefix target =
