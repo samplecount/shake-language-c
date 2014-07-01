@@ -19,6 +19,7 @@ module Shakefile.C.Android (
   , standaloneToolChain
   , abiString
   , gnustl
+  , libcxx
   , native_app_glue
 ) where
 
@@ -161,3 +162,21 @@ gnustl version linkage ndk target =
           lib = case linkage of
                   Static -> "gnustl_static"
                   Shared -> "gnustl_shared"
+
+libcxx :: Linkage -> FilePath -> Target -> BuildFlags -> BuildFlags
+libcxx linkage ndk target =
+    append systemIncludes [ libcxxPath </> "libcxx" </> "include"
+                          -- NOTE: libcxx needs to be first in include path!
+                          , stlPath </> "gabi++" </> "include"
+                          , ndk </> "sources" </> "android" </> "support" </> "include" ]
+  . append libraryPath [libcxxPath </> "libs" </> abi]
+  . append libraries [lib]
+  . append compilerFlags [(Just Cpp, flags)]
+  . append linkerFlags flags
+    where stlPath = ndk </> "sources" </> "cxx-stl"
+          libcxxPath = stlPath </> "llvm-libc++"
+          abi = abiString (get targetArch target)
+          lib = case linkage of
+                  Static -> "libc++_static"
+                  Shared -> "libc++_shared"
+          flags = ["-stdlib=libc++"]
