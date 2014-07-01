@@ -109,7 +109,7 @@ mkDefaultBuildFlags ndk target =
     , "-no-canonical-prefixes"])])
   . append linkerFlags ([sysroot, march] ++ archLinkerFlags arch)
   . append linkerFlags ["-no-canonical-prefixes"]
-  . append archiverFlags ["-rs"]
+  . append archiverFlags ["crs"]
   where
     arch = get targetArch target
     sysroot = "--sysroot=" ++ ndk </> "platforms" </> androidPlatformPrefix target
