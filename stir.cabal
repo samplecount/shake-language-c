@@ -35,6 +35,7 @@ Library
     Shakefile.C.NaCl
     Shakefile.C.OSX
     Shakefile.C.PkgConfig
+    Shakefile.C.Windows
     Shakefile.Configuration
     Shakefile.Label
     Shakefile.SourceTree
