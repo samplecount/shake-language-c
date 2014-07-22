@@ -84,7 +84,7 @@ module Shakefile.C (
 import           Control.Applicative ((<$>))
 import           Control.Monad
 import           Data.Char (toLower)
-import           Development.Shake ((?>), need, readFile', system', systemOutput, want, writeFile')
+import           Development.Shake ((?>), command_, need, readFile', systemOutput, want, writeFile')
 import qualified Development.Shake as Shake
 import           Development.Shake.FilePath
 import           Data.Maybe
@@ -271,7 +271,7 @@ mkLabel ''ToolChain
 defaultArchiver :: Archiver
 defaultArchiver toolChain buildFlags inputs output = do
     need inputs
-    system' (tool archiverCmd toolChain)
+    command_ [] (tool archiverCmd toolChain)
         $ get archiverFlags buildFlags
         ++ [output]
         ++ inputs
@@ -284,7 +284,7 @@ defaultLinker toolChain buildFlags inputs output = do
                     . prepend libraries (map (strip.dropExtension.takeFileName) localLibs)
                     $ buildFlags
     need $ inputs ++ localLibs
-    system' (tool linkerCmd toolChain)
+    command_ [] (tool linkerCmd toolChain)
           $  inputs
           ++ get linkerFlags buildFlags'
           ++ concatMapFlag "-L" (get libraryPath buildFlags')
@@ -385,7 +385,7 @@ dependencyFile :: ToolChain -> BuildFlags -> FilePath -> [FilePath] -> FilePath 
 dependencyFile toolChain buildFlags input deps output = do
     output ?=> \_ -> do
         need $ [input] ++ deps
-        system' (tool compilerCmd toolChain)
+        command_ [] (tool compilerCmd toolChain)
                 $  concatMapFlag "-I" (get systemIncludes buildFlags)
                 ++ mapFlag "-iquote" (get userIncludes buildFlags)
                 ++ defineFlags buildFlags
@@ -405,7 +405,7 @@ staticObject toolChain buildFlags input deps output = do
     output ?=> \_ -> do
         deps' <- parseDependencies <$> readFile' depFile
         need $ [input] ++ deps ++ deps'
-        system' (tool compilerCmd toolChain)
+        command_ [] (tool compilerCmd toolChain)
                 $  concatMapFlag "-I" (get systemIncludes buildFlags)
                 ++ mapFlag "-iquote" (get userIncludes buildFlags)
                 ++ defineFlags buildFlags
