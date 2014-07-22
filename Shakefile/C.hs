@@ -87,6 +87,7 @@ import           Data.Char (toLower)
 import           Development.Shake ((?>), command_, need, readFile', systemOutput, want, writeFile')
 import qualified Development.Shake as Shake
 import           Development.Shake.FilePath
+import           Development.Shake.Util (parseMakefile)
 import           Data.Maybe
 import           Data.Version
 import           Shakefile.Label ((:->), append, get, mkLabel, prepend, set)
@@ -393,8 +394,10 @@ dependencyFile toolChain buildFlags input deps output = do
                 ++ compilerFlagsFor (languageOf input) buildFlags
                 ++ ["-MM", "-o", output, input]
 
+-- FIXME: This function fails for paths with escaped spaces
 parseDependencies :: String -> [FilePath]
-parseDependencies = drop 2 . words . filter (/= '\\')
+--parseDependencies = drop 2 . words . filter (/= '\\')
+parseDependencies = snd . head . parseMakefile
 
 type ObjectRule = ToolChain -> BuildFlags -> FilePath -> [FilePath] -> FilePath -> Shake.Rules ()
 
