@@ -21,6 +21,7 @@ import Data.Label (get, set)
 import Data.Version (Version(..))
 import Development.Shake (need, command_)
 import Shakefile.C
+import System.FilePath ((<.>))
 import qualified System.Info as System
 import System.Process (readProcess)
 
@@ -47,6 +48,13 @@ archiver_ toolChain buildFlags inputs output = do
           ++ inputs
     command_ [] (command "ranlib" toolChain) [output]
 
+linkResultFileName_ :: LinkResult -> FilePath -> FilePath
+linkResultFileName_ linkResult =
+  case linkResult of
+    Executable     -> (<.> "exe")
+    SharedLibrary  -> ("lib"++) . (<.> "dll")
+    DynamicLibrary ->             (<.> "dll")
+
 toolChain :: ToolChainVariant -> ToolChain
 toolChain GCC =
     set variant GCC
@@ -54,12 +62,14 @@ toolChain GCC =
   $ set archiverCmd "ar"
   $ set archiver archiver_
   $ set linkerCmd "g++"
+  $ set linkResultFileName linkResultFileName_
   $ defaultToolChain
 toolChain LLVM =
     set variant LLVM
   $ set compilerCmd "gcc"
   $ set archiverCmd "ar"
   $ set linkerCmd "g++"
+  $ set linkResultFileName linkResultFileName_
   $ defaultToolChain
 toolChain Generic = toolChain GCC
 
