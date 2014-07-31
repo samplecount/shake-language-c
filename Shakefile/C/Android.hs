@@ -58,8 +58,8 @@ standaloneToolChain path target =
   $ defaultToolChain
   where mkTool x = targetString target ++ "-" ++ x
 
-toolChain :: FilePath -> ToolChainVariant -> Version -> Target -> ToolChain
-toolChain ndk GCC version target =
+toolChain :: FilePath -> (ToolChainVariant, Version) -> Target -> ToolChain
+toolChain ndk (GCC, version) target =
     set variant GCC
   $ set prefix (Just (ndk </> "toolchains"
                           </> tcPrefix ++ showVersion version
@@ -73,7 +73,7 @@ toolChain ndk GCC version target =
   where
     tcPrefix = toolChainPrefix target
     mkTool x = tcPrefix ++ x
-toolChain ndk LLVM version target =
+toolChain ndk (LLVM, version) target =
     set variant LLVM
   $ set prefix (Just (ndk </> "toolchains"
                           </> "llvm-" ++ showVersion version
@@ -95,7 +95,7 @@ toolChain ndk LLVM version target =
         X86 I386 -> "i686-none-linux-android"
         _ -> error "Unsupported LLVM target architecture"
 
-toolChain _ variant version _ =
+toolChain _ (variant, version) _ =
   error $ "Unknown tool chain variant "
         ++ show variant ++ " "
         ++ showVersion version
