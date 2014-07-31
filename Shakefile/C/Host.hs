@@ -23,6 +23,7 @@ module Shakefile.C.Host (
 import           Shakefile.C (Target, ToolChain, notIf, onlyIf)
 import qualified Shakefile.C.Linux as Linux
 import qualified Shakefile.C.OSX as OSX
+import qualified Shakefile.C.Windows as Windows
 import qualified System.Info as System
 
 -- | Host operating system.
@@ -37,7 +38,7 @@ os :: OS
 os =
   case System.os of
     "darwin" -> OSX
-    "mingw"  -> Windows
+    "mingw32"  -> Windows
     "linux"  -> Linux
     _ -> error $ "Unknown host operating system: " ++ System.os
 
@@ -51,6 +52,7 @@ notOn which = notIf (os `elem` which)
 getDefaultToolChain :: IO (Target, ToolChain)
 getDefaultToolChain =
   case os of
-    OSX -> OSX.getDefaultToolChain
     Linux -> Linux.getDefaultToolChain
+    OSX -> OSX.getDefaultToolChain
+    Windows -> Windows.getDefaultToolChain
     _ -> error $ "No default toolchain for this operating system (" ++ show os ++ ")"

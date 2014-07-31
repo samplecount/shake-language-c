@@ -84,9 +84,10 @@ module Shakefile.C (
 import           Control.Applicative ((<$>))
 import           Control.Monad
 import           Data.Char (toLower)
-import           Development.Shake ((?>), need, readFile', system', systemOutput, want, writeFile')
+import           Development.Shake ((?>), command_, need, readFile', systemOutput, want, writeFile')
 import qualified Development.Shake as Shake
 import           Development.Shake.FilePath
+import           Development.Shake.Util (parseMakefile)
 import           Data.Maybe
 import           Data.Version
 import           Shakefile.Label ((:->), append, get, mkLabel, prepend, set)
@@ -271,7 +272,7 @@ mkLabel ''ToolChain
 defaultArchiver :: Archiver
 defaultArchiver toolChain buildFlags inputs output = do
     need inputs
-    system' (tool archiverCmd toolChain)
+    command_ [] (tool archiverCmd toolChain)
         $ get archiverFlags buildFlags
         ++ [output]
         ++ inputs
@@ -284,7 +285,7 @@ defaultLinker toolChain buildFlags inputs output = do
                     . prepend libraries (map (strip.dropExtension.takeFileName) localLibs)
                     $ buildFlags
     need $ inputs ++ localLibs
-    system' (tool linkerCmd toolChain)
+    command_ [] (tool linkerCmd toolChain)
           $  inputs
           ++ get linkerFlags buildFlags'
           ++ concatMapFlag "-L" (get libraryPath buildFlags')
@@ -385,7 +386,7 @@ dependencyFile :: ToolChain -> BuildFlags -> FilePath -> [FilePath] -> FilePath 
 dependencyFile toolChain buildFlags input deps output = do
     output ?=> \_ -> do
         need $ [input] ++ deps
-        system' (tool compilerCmd toolChain)
+        command_ [] (tool compilerCmd toolChain)
                 $  concatMapFlag "-I" (get systemIncludes buildFlags)
                 ++ mapFlag "-iquote" (get userIncludes buildFlags)
                 ++ defineFlags buildFlags
@@ -393,8 +394,10 @@ dependencyFile toolChain buildFlags input deps output = do
                 ++ compilerFlagsFor (languageOf input) buildFlags
                 ++ ["-MM", "-o", output, input]
 
+-- FIXME: This function fails for paths with escaped spaces
 parseDependencies :: String -> [FilePath]
-parseDependencies = drop 2 . words . filter (/= '\\')
+--parseDependencies = drop 2 . words . filter (/= '\\')
+parseDependencies = snd . head . parseMakefile
 
 type ObjectRule = ToolChain -> BuildFlags -> FilePath -> [FilePath] -> FilePath -> Shake.Rules ()
 
@@ -405,7 +408,7 @@ staticObject toolChain buildFlags input deps output = do
     output ?=> \_ -> do
         deps' <- parseDependencies <$> readFile' depFile
         need $ [input] ++ deps ++ deps'
-        system' (tool compilerCmd toolChain)
+        command_ [] (tool compilerCmd toolChain)
                 $  concatMapFlag "-I" (get systemIncludes buildFlags)
                 ++ mapFlag "-iquote" (get userIncludes buildFlags)
                 ++ defineFlags buildFlags

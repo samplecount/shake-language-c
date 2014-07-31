@@ -19,6 +19,7 @@ module Shakefile.C.Android (
   , standaloneToolChain
   , abiString
   , gnustl
+  , libcxx
   , native_app_glue
 ) where
 
@@ -57,8 +58,8 @@ standaloneToolChain path target =
   $ defaultToolChain
   where mkTool x = targetString target ++ "-" ++ x
 
-toolChain :: FilePath -> ToolChainVariant -> Version -> Target -> ToolChain
-toolChain ndk GCC version target =
+toolChain :: FilePath -> (ToolChainVariant, Version) -> Target -> ToolChain
+toolChain ndk (GCC, version) target =
     set variant GCC
   $ set prefix (Just (ndk </> "toolchains"
                           </> tcPrefix ++ showVersion version
@@ -69,9 +70,35 @@ toolChain ndk GCC version target =
   $ set linkerCmd (mkTool "g++")
   $ set defaultBuildFlags (mkDefaultBuildFlags ndk target)
   $ defaultToolChain
-  where tcPrefix = toolChainPrefix target
-        mkTool x = tcPrefix ++ x
-toolChain _ variant version _ = error $ "Unknown tool chain variant " ++ show variant ++ " " ++ showVersion version
+  where
+    tcPrefix = toolChainPrefix target
+    mkTool x = tcPrefix ++ x
+toolChain ndk (LLVM, version) target =
+    set variant LLVM
+  $ set prefix (Just (ndk </> "toolchains"
+                          </> "llvm-" ++ showVersion version
+                          </> "prebuilt"
+                          </> osPrefix))
+  $ set compilerCmd "clang"
+  $ set archiverCmd "llvm-ar"
+  $ set linkerCmd "clang++"
+  $ set defaultBuildFlags (  mkDefaultBuildFlags ndk target
+                           . append compilerFlags [(Nothing, ["-target", llvmTarget target]),
+                                                   (Nothing, ["-gcc-toolchain", ndk </> "toolchains/arm-linux-androideabi-4.8/prebuilt" </> osPrefix])
+                                                  ])
+  $ defaultToolChain
+  where
+    llvmTarget target =
+      case get targetArch target of
+        Arm Armv5 -> "armv5te-none-linux-androideabi"
+        Arm Armv7 -> "armv7-none-linux-androideabi"
+        X86 I386 -> "i686-none-linux-android"
+        _ -> error "Unsupported LLVM target architecture"
+
+toolChain _ (variant, version) _ =
+  error $ "Unknown tool chain variant "
+        ++ show variant ++ " "
+        ++ showVersion version
 
 androidPlatformPrefix :: Target -> FilePath
 androidPlatformPrefix target =
@@ -89,7 +116,7 @@ androidArchString arch = archString arch
 archCompilerFlags :: Arch -> [(Maybe Language, [String])]
 archCompilerFlags (Arm Armv7) = [(Nothing, ["-mfloat-abi=softfp", "-mfpu=neon" {- vfpv3-d16 -}])]
 archCompilerFlags (Arm _)     = [(Nothing, ["-mtune=xscale", "-msoft-float"])]
-archCompilerFlags _ = []
+archCompilerFlags _           = []
 
 archLinkerFlags :: Arch -> [String]
 archLinkerFlags arch =
@@ -109,7 +136,7 @@ mkDefaultBuildFlags ndk target =
     , "-no-canonical-prefixes"])])
   . append linkerFlags ([sysroot, march] ++ archLinkerFlags arch)
   . append linkerFlags ["-no-canonical-prefixes"]
-  . append archiverFlags ["-rs"]
+  . append archiverFlags ["crs"]
   where
     arch = get targetArch target
     sysroot = "--sysroot=" ++ ndk </> "platforms" </> androidPlatformPrefix target
@@ -135,3 +162,21 @@ gnustl version linkage ndk target =
           lib = case linkage of
                   Static -> "gnustl_static"
                   Shared -> "gnustl_shared"
+
+libcxx :: Linkage -> FilePath -> Target -> BuildFlags -> BuildFlags
+libcxx linkage ndk target =
+    append systemIncludes [ libcxxPath </> "libcxx" </> "include"
+                          -- NOTE: libcxx needs to be first in include path!
+                          , stlPath </> "gabi++" </> "include"
+                          , ndk </> "sources" </> "android" </> "support" </> "include" ]
+  . append libraryPath [libcxxPath </> "libs" </> abi]
+  . append libraries [lib]
+  . append compilerFlags [(Just Cpp, flags)]
+  . append linkerFlags flags
+    where stlPath = ndk </> "sources" </> "cxx-stl"
+          libcxxPath = stlPath </> "llvm-libc++"
+          abi = abiString (get targetArch target)
+          lib = case linkage of
+                  Static -> "libc++_static"
+                  Shared -> "libc++_shared"
+          flags = ["-stdlib=libc++"]

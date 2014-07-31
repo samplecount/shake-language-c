@@ -61,7 +61,8 @@ parseFlags = unescape . words . head . lines
   where
     escape = "\\"
     isEscaped = isSuffixOf escape
-    dropEscape = reverse . drop (length escape) . reverse
+    dropEscape = (++" ") . reverse . drop (length escape) . reverse
+    -- dropEscape = (++" ")
     unescape [] = []
     unescape [x] = [if isEscaped x then dropEscape x else x]
     unescape (x1:x2:xs)
