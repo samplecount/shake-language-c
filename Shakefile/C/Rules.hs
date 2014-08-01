@@ -47,10 +47,8 @@ dependencyFile toolChain buildFlags input deps output = do
 parseDependencies :: String -> [FilePath]
 parseDependencies = snd . head . parseMakefile
 
-type ObjectRule = ToolChain -> BuildFlags -> FilePath -> [FilePath] -> FilePath -> Rules ()
-
-staticObject :: ObjectRule
-staticObject toolChain buildFlags input deps output = do
+objectFile :: ToolChain -> BuildFlags -> FilePath -> [FilePath] -> FilePath -> Rules ()
+objectFile toolChain buildFlags input deps output = do
     let depFile = output <.> "d"
     dependencyFile toolChain buildFlags input deps depFile
     output ?=> \_ -> do
@@ -64,26 +62,22 @@ staticObject toolChain buildFlags input deps output = do
                 ++ compilerFlagsFor (languageOf input) buildFlags
                 ++ ["-c", "-o", output, input]
 
-sharedObject :: ObjectRule
-sharedObject toolChain = staticObject toolChain -- Disable for now: . append compilerFlags [(Nothing, ["-fPIC"])]
-
 mkObjectsDir :: FilePath -> FilePath
 mkObjectsDir path = takeDirectory path </> map tr (takeFileName path) ++ "_obj"
     where tr '.' = '_'
           tr x   = x
 
-buildProduct :: ObjectRule
-             -> Linker
+buildProduct :: Linker
              -> ToolChain
              -> SourceTree BuildFlags
              -> FilePath
              -> Rules FilePath
-buildProduct object link toolChain sources resultPath = do
+buildProduct link toolChain sources resultPath = do
     let objectsDir = mkObjectsDir resultPath
         sources' = SourceTree.flags (get ToolChain.defaultBuildFlags toolChain) sources
     objects <- forM (SourceTree.apply BuildFlags.defaultBuildFlags sources') $ \(buildFlags, (src, deps)) -> do
         let obj = objectsDir </> makeRelative "/" (src <.> "o")
-        object toolChain buildFlags src deps obj
+        objectFile toolChain buildFlags src deps obj
         return obj
     resultPath ?=> link toolChain (SourceTree.collect BuildFlags.defaultBuildFlags sources') objects
     return resultPath
@@ -92,7 +86,6 @@ buildProduct object link toolChain sources resultPath = do
 executable :: ToolChain -> FilePath -> SourceTree BuildFlags -> Rules FilePath
 executable toolChain resultPath sources =
     buildProduct
-        staticObject
         (get linker toolChain Executable)
         toolChain
         sources
@@ -102,7 +95,6 @@ executable toolChain resultPath sources =
 staticLibrary :: ToolChain -> FilePath -> SourceTree BuildFlags -> Rules FilePath
 staticLibrary toolChain resultPath sources =
     buildProduct
-        staticObject
         (get archiver toolChain)
         toolChain
         sources
@@ -112,7 +104,6 @@ staticLibrary toolChain resultPath sources =
 sharedLibrary :: ToolChain -> FilePath -> SourceTree BuildFlags -> Rules FilePath
 sharedLibrary toolChain resultPath sources =
     buildProduct
-        sharedObject
         (get linker toolChain SharedLibrary)
         toolChain
         sources
@@ -122,7 +113,6 @@ sharedLibrary toolChain resultPath sources =
 dynamicLibrary :: ToolChain -> FilePath -> SourceTree BuildFlags -> Rules FilePath
 dynamicLibrary toolChain resultPath sources =
     buildProduct
-        sharedObject
         (get linker toolChain DynamicLibrary)
         toolChain
         sources
