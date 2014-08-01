@@ -53,6 +53,7 @@ module Shakefile.C.ToolChain (
   , defaultArchiver
   , Linker
   , defaultLinker
+  , ToBuildPrefix(..)
 ) where
 
 import           Data.Char (toLower)
@@ -236,3 +237,14 @@ toolChainFromEnvironment = do
         "llvm" -> LLVM
         "clang" -> LLVM
         _ -> Generic
+
+class ToBuildPrefix a where
+  toBuildPrefix :: a -> FilePath
+
+instance ToBuildPrefix Platform where
+  toBuildPrefix = platformString
+
+instance ToBuildPrefix Target where
+   toBuildPrefix target =
+          toBuildPrefix (get targetPlatform target)
+      </> (archString $ get targetArch target)
