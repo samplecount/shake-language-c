@@ -67,21 +67,19 @@ staticObject toolChain buildFlags input deps output = do
 sharedObject :: ObjectRule
 sharedObject toolChain = staticObject toolChain -- Disable for now: . append compilerFlags [(Nothing, ["-fPIC"])]
 
-mkObjectsDir :: FilePath -> FilePath -> FilePath
-mkObjectsDir buildPrefix path = buildPrefix </> map tr (makeRelative "/" path) ++ "_obj"
+mkObjectsDir :: FilePath -> FilePath
+mkObjectsDir path = takeDirectory path </> map tr (takeFileName path) ++ "_obj"
     where tr '.' = '_'
           tr x   = x
 
-mkBuildPath :: FilePath -> FilePath -> FilePath
-mkBuildPath buildPrefix path = buildPrefix </> makeRelative "/" path
-
-buildProduct :: ObjectRule -> Linker -> FilePath
-             -> FilePath -> ToolChain
+buildProduct :: ObjectRule
+             -> Linker
+             -> ToolChain
              -> SourceTree BuildFlags
+             -> FilePath
              -> Rules FilePath
-buildProduct object link fileName buildPrefix toolChain sources = do
-    let resultPath = mkBuildPath buildPrefix fileName
-        objectsDir = mkObjectsDir buildPrefix fileName
+buildProduct object link toolChain sources resultPath = do
+    let objectsDir = mkObjectsDir resultPath
         sources' = SourceTree.flags (get ToolChain.defaultBuildFlags toolChain) sources
     objects <- forM (SourceTree.apply BuildFlags.defaultBuildFlags sources') $ \(buildFlags, (src, deps)) -> do
         let obj = objectsDir </> makeRelative "/" (src <.> "o")
@@ -91,37 +89,41 @@ buildProduct object link fileName buildPrefix toolChain sources = do
     return resultPath
 
 -- | Rule for building an executable.
-executable :: FilePath -> ToolChain -> String -> SourceTree BuildFlags -> Rules FilePath
-executable buildPrefix toolChain name sources =
+executable :: ToolChain -> FilePath -> SourceTree BuildFlags -> Rules FilePath
+executable toolChain resultPath sources =
     buildProduct
         staticObject
         (get linker toolChain Executable)
-        (get linkResultFileName toolChain Executable name)
-        buildPrefix toolChain sources
+        toolChain
+        sources
+        (get linkResultFileName toolChain Executable resultPath)
 
 -- | Rule for building a static library.
-staticLibrary :: FilePath -> ToolChain -> String -> SourceTree BuildFlags -> Rules FilePath
-staticLibrary buildPrefix toolChain name sources =
+staticLibrary :: ToolChain -> FilePath -> SourceTree BuildFlags -> Rules FilePath
+staticLibrary toolChain resultPath sources =
     buildProduct
         staticObject
         (get archiver toolChain)
-        (get archiveFileName toolChain name)
-        buildPrefix toolChain sources
+        toolChain
+        sources
+        (get archiveFileName toolChain resultPath)
 
 -- | Rule for building a shared library.
-sharedLibrary :: FilePath -> ToolChain -> String -> SourceTree BuildFlags -> Rules FilePath
-sharedLibrary buildPrefix toolChain name sources =
+sharedLibrary :: ToolChain -> FilePath -> SourceTree BuildFlags -> Rules FilePath
+sharedLibrary toolChain resultPath sources =
     buildProduct
         sharedObject
         (get linker toolChain SharedLibrary)
-        (get linkResultFileName toolChain SharedLibrary name)
-        buildPrefix toolChain sources
+        toolChain
+        sources
+        (get linkResultFileName toolChain SharedLibrary resultPath)
 
 -- | Rule for building a dynamic library.
-dynamicLibrary :: FilePath -> ToolChain -> String -> SourceTree BuildFlags -> Rules FilePath
-dynamicLibrary buildPrefix toolChain name sources =
+dynamicLibrary :: ToolChain -> FilePath -> SourceTree BuildFlags -> Rules FilePath
+dynamicLibrary toolChain resultPath sources =
     buildProduct
         sharedObject
         (get linker toolChain DynamicLibrary)
-        (get linkResultFileName toolChain DynamicLibrary name)
-        buildPrefix toolChain sources
+        toolChain
+        sources
+        (get linkResultFileName toolChain DynamicLibrary resultPath)

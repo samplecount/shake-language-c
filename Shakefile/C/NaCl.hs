@@ -90,8 +90,8 @@ toolChain sdk config target =
   $ set linkResultFileName (\linkResult ->
       case linkResult of
         Executable     -> (<.> "bc")
-        SharedLibrary  -> ("lib"++) . (<.> "so")
-        DynamicLibrary ->             (<.> "so"))
+        SharedLibrary  -> (<.> "so")
+        DynamicLibrary -> (<.> "so"))
   $ set defaultBuildFlags
       ( append systemIncludes [includeDir]
       . append userIncludes [includeDir]

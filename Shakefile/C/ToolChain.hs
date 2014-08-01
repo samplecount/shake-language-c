@@ -157,11 +157,11 @@ data ToolChain = ToolChain {
   , _compilerCmd :: String
   , _archiverCmd :: String
   , _archiver :: Archiver
-  , _archiveFileName :: String -> FilePath
+  , _archiveFileName :: FilePath -> FilePath
   , _linkerCmd :: String
   , _linker :: LinkResult -> Linker
   -- Not sure whether this should be someplace else
-  , _linkResultFileName :: LinkResult -> String -> FilePath
+  , _linkResultFileName :: LinkResult -> FilePath -> FilePath
   , _defaultBuildFlags :: BuildFlags -> BuildFlags
   }
 
@@ -201,7 +201,7 @@ defaultToolChain =
       , _compilerCmd = "gcc"
       , _archiverCmd = "ar"
       , _archiver = defaultArchiver
-      , _archiveFileName = ("lib"++) . (<.> "a")
+      , _archiveFileName = (<.> "a")
       , _linkerCmd = "gcc"
       , _linker = \link toolChain ->
             case link of
@@ -210,8 +210,8 @@ defaultToolChain =
       , _linkResultFileName = \linkResult ->
           case linkResult of
             Executable     -> id
-            SharedLibrary  -> ("lib"++) . (<.> "so")
-            DynamicLibrary ->             (<.> "so")
+            SharedLibrary  -> (<.> "so")
+            DynamicLibrary -> (<.> "so")
       , _defaultBuildFlags = id
       }
 

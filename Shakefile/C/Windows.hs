@@ -52,8 +52,8 @@ linkResultFileName_ :: LinkResult -> FilePath -> FilePath
 linkResultFileName_ linkResult =
   case linkResult of
     Executable     -> (<.> "exe")
-    SharedLibrary  -> ("lib"++) . (<.> "dll")
-    DynamicLibrary ->             (<.> "dll")
+    SharedLibrary  -> (<.> "dll")
+    DynamicLibrary -> (<.> "dll")
 
 toolChain :: ToolChainVariant -> ToolChain
 toolChain GCC =

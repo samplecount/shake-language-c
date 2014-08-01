@@ -130,8 +130,8 @@ toolChain developer target =
   $ set linkResultFileName (\linkResult ->
       case linkResult of
         Executable     -> id
-        SharedLibrary  -> ("lib"++) . (<.> "dylib")
-        DynamicLibrary ->             (<.> "dylib"))
+        SharedLibrary  -> (<.> "dylib")
+        DynamicLibrary -> (<.> "dylib"))
   $ set defaultBuildFlags ( append preprocessorFlags [ "-isysroot", sysRoot ]
                           . append compilerFlags [(Nothing, archFlags target)]
                           . append linkerFlags (archFlags target ++ [ "-isysroot", sysRoot ]) )
