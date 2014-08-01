@@ -16,8 +16,7 @@
 {-# LANGUAGE TypeOperators #-}
 
 module Shakefile.C.ToolChain (
-    defaultBuildPrefix
-  , Platform(..)
+    Platform(..)
   , platformString
   , Arch(..)
   , archShortString
@@ -65,13 +64,6 @@ import           Shakefile.Label ((:->), append, get, mkLabel, prepend, set)
 import           Shakefile.C.BuildFlags hiding (defaultBuildFlags)
 import           Shakefile.C.Util (concatMapFlag)
 import           System.Environment (getEnvironment)
-
-defaultBuildPrefix :: FilePath -> Target -> String -> FilePath
-defaultBuildPrefix buildDir target config =
-      buildDir
-  </> map toLower config
-  </> (platformString $ _targetPlatform target)
-  </> (archString $ _targetArch target)
 
 data Platform = Platform {
     platformName :: String

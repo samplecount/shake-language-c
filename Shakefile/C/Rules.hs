@@ -18,12 +18,14 @@ module Shakefile.C.Rules (
     Env
   , defaultEnv
   , buildPrefix
+  , defaultBuildPrefix
   , executable
   , staticLibrary
   , sharedLibrary
   , dynamicLibrary
 ) where
 
+import           Data.Char (toLower)
 import           Control.Applicative ((<$>))
 import           Control.Monad
 import           Development.Shake hiding (Env)
@@ -45,6 +47,13 @@ mkLabel ''Env
 
 defaultEnv :: Env
 defaultEnv = Env "."
+
+defaultBuildPrefix :: FilePath -> Target -> String -> FilePath
+defaultBuildPrefix buildDir target config =
+      buildDir
+  </> map toLower config
+  </> (platformString $ get targetPlatform target)
+  </> (archString $ get targetArch target)
 
 dependencyFile :: ToolChain -> BuildFlags -> FilePath -> [FilePath] -> FilePath -> Rules ()
 dependencyFile toolChain buildFlags input deps output = do
