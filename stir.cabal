@@ -25,6 +25,11 @@ Maintainer: stefan@samplecount.com
 
 Cabal-Version: >= 1.4
 Build-Type: Simple
+
+Extra-Source-Files:
+  README.md
+  stir
+
 Library
   Hs-Source-Dirs: .
   Exposed-Modules:
