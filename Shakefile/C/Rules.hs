@@ -42,11 +42,11 @@ buildProduct :: Linker
 buildProduct link toolChain sources resultPath = do
     let objectsDir = mkObjectsDir resultPath
         sources' = SourceTree.flags (get ToolChain.defaultBuildFlags toolChain) sources
-    objects <- forM (SourceTree.apply BuildFlags.defaultBuildFlags sources') $ \(buildFlags, (src, deps)) -> do
+    objects <- forM (SourceTree.flatten sources') $ \(buildFlags, (src, deps)) -> do
         let obj = objectsDir </> makeRelative "/" (src <.> "o")
-        obj ?=> \_ -> objectFile toolChain buildFlags src deps obj
+        obj ?=> objectFile toolChain (buildFlags BuildFlags.defaultBuildFlags) src deps
         return obj
-    resultPath ?=> link toolChain (SourceTree.collect BuildFlags.defaultBuildFlags sources') objects
+    resultPath ?=> link toolChain (SourceTree.collect sources' BuildFlags.defaultBuildFlags) objects
     return resultPath
 
 -- | Rule for building an executable.

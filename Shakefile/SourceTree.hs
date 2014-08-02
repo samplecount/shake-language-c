@@ -21,7 +21,7 @@ module Shakefile.SourceTree (
   , files
   , list
   , append
-  , apply
+  , flatten
   , collect
 ) where
 
@@ -51,16 +51,15 @@ list = node id []
 append :: SourceTree a -> SourceTree a -> SourceTree a
 append (Node x ts) t = Node x (ts ++ [t])
 
-apply :: a -> SourceTree a -> [(a, (FilePath, [FilePath]))]
-apply = go
+flatten :: SourceTree a -> [(a -> a, (FilePath, [FilePath]))]
+flatten = go id
     where
-        flatten a = map ((,)a)
-        go a (Node (f, fs) []) = flatten (f a) fs
-        go a (Node (f, fs) ns) = let a' = f a
-                                 in flatten a' fs ++ concatMap (go a') ns
-
-collect :: a -> SourceTree a -> a
-collect a t = go id t a
+        distribute a = map ((,)a)
+        go g (Node (f, fs) []) = distribute (f.g) fs
+        go g (Node (f, fs) ns) = let h = f.g
+                                 in distribute h fs ++ concatMap (go h) ns
+collect :: SourceTree a -> a -> a
+collect t = go id t
     where
         go g (Node (f, _) []) = f.g
         go g (Node (f, _) ns) = foldl go (f.g) ns
