@@ -49,6 +49,7 @@ module Shakefile.C.ToolChain (
   , defaultBuildFlags
   , command
   , tool
+  , objectFile
   , Archiver
   , defaultArchiver
   , Linker
@@ -60,10 +61,12 @@ import           Data.Char (toLower)
 import           Development.Shake hiding (command)
 import qualified Development.Shake as Shake
 import           Development.Shake.FilePath
+import           Development.Shake.Util (needMakefileDependencies)
 import           Data.Version
 import           Shakefile.Label ((:->), append, get, mkLabel, prepend, set)
 import           Shakefile.C.BuildFlags hiding (defaultBuildFlags)
-import           Shakefile.C.Util (concatMapFlag)
+import           Shakefile.C.Language (languageOf)
+import           Shakefile.C.Util (concatMapFlag, mapFlag)
 import           System.Environment (getEnvironment)
 
 data Platform = Platform {
@@ -217,8 +220,8 @@ defaultToolChain =
 
 -- | Get the full path of an arbitrary toolchain command.
 command :: String -> ToolChain -> FilePath
-command cmd toolChain = maybe cmd (flip combine ("bin" </> cmd))
-                                  (get prefix toolChain)
+command name toolChain = maybe name (flip combine ("bin" </> name))
+                                    (get prefix toolChain)
 
 -- | Get the full path of a predefined tool.
 tool :: (ToolChain :-> String) -> ToolChain -> FilePath
@@ -237,6 +240,20 @@ toolChainFromEnvironment = do
         "llvm" -> LLVM
         "clang" -> LLVM
         _ -> Generic
+
+objectFile :: ToolChain -> BuildFlags -> FilePath -> [FilePath] -> FilePath -> Action ()
+objectFile toolChain buildFlags input deps output = do
+  need $ [input] ++ deps
+  let depFile = output <.> "d"
+  command_ [] (tool compilerCmd toolChain)
+    $  concatMapFlag "-I" (get systemIncludes buildFlags)
+    ++ mapFlag "-iquote" (get userIncludes buildFlags)
+    ++ defineFlags buildFlags
+    ++ get preprocessorFlags buildFlags
+    ++ compilerFlagsFor (languageOf input) buildFlags
+    ++ ["-MD", "-MF", depFile]
+    ++ ["-c", "-o", output, input]
+  needMakefileDependencies depFile
 
 class ToBuildPrefix a where
   toBuildPrefix :: a -> FilePath

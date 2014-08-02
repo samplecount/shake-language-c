@@ -19,48 +19,15 @@ module Shakefile.C.Rules (
   , dynamicLibrary
 ) where
 
-import           Control.Applicative ((<$>))
 import           Control.Monad
 import           Development.Shake
 import           Development.Shake.FilePath
-import           Development.Shake.Util (parseMakefile)
 import           Shakefile.C.BuildFlags as BuildFlags
-import           Shakefile.C.Language (languageOf)
 import           Shakefile.C.ToolChain as ToolChain
 import           Shakefile.C.Util
 import           Shakefile.Label (get)
 import           Shakefile.SourceTree (SourceTree)
 import qualified Shakefile.SourceTree as SourceTree
-
-dependencyFile :: ToolChain -> BuildFlags -> FilePath -> [FilePath] -> FilePath -> Rules ()
-dependencyFile toolChain buildFlags input deps output = do
-    output ?=> \_ -> do
-        need $ [input] ++ deps
-        command_ [] (tool compilerCmd toolChain)
-                $  concatMapFlag "-I" (get systemIncludes buildFlags)
-                ++ mapFlag "-iquote" (get userIncludes buildFlags)
-                ++ defineFlags buildFlags
-                ++ get preprocessorFlags buildFlags
-                ++ compilerFlagsFor (languageOf input) buildFlags
-                ++ ["-MM", "-o", output, input]
-
-parseDependencies :: String -> [FilePath]
-parseDependencies = snd . head . parseMakefile
-
-objectFile :: ToolChain -> BuildFlags -> FilePath -> [FilePath] -> FilePath -> Rules ()
-objectFile toolChain buildFlags input deps output = do
-    let depFile = output <.> "d"
-    dependencyFile toolChain buildFlags input deps depFile
-    output ?=> \_ -> do
-        deps' <- parseDependencies <$> readFile' depFile
-        need $ [input] ++ deps ++ deps'
-        command_ [] (tool compilerCmd toolChain)
-                $  concatMapFlag "-I" (get systemIncludes buildFlags)
-                ++ mapFlag "-iquote" (get userIncludes buildFlags)
-                ++ defineFlags buildFlags
-                ++ get preprocessorFlags buildFlags
-                ++ compilerFlagsFor (languageOf input) buildFlags
-                ++ ["-c", "-o", output, input]
 
 mkObjectsDir :: FilePath -> FilePath
 mkObjectsDir path = takeDirectory path </> map tr (takeFileName path) ++ "_obj"
@@ -77,7 +44,7 @@ buildProduct link toolChain sources resultPath = do
         sources' = SourceTree.flags (get ToolChain.defaultBuildFlags toolChain) sources
     objects <- forM (SourceTree.apply BuildFlags.defaultBuildFlags sources') $ \(buildFlags, (src, deps)) -> do
         let obj = objectsDir </> makeRelative "/" (src <.> "o")
-        objectFile toolChain buildFlags src deps obj
+        obj ?=> \_ -> objectFile toolChain buildFlags src deps obj
         return obj
     resultPath ?=> link toolChain (SourceTree.collect BuildFlags.defaultBuildFlags sources') objects
     return resultPath
