@@ -13,7 +13,7 @@
 -- limitations under the License.
 
 Name: stir
-Version: 0.3.0
+Version: 0.4.0
 Synopsis: Build system based on shake
 Description: Stir is a build system based on shake with a focus on cross-compiling C/C++/ObjC code for various target platforms. The list of supported platforms includes Android, Linux, MacOS X, iOS and Google Native Client.
 Category: Development
