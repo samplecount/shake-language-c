@@ -19,6 +19,7 @@ module Shakefile.C.PkgConfig (
   , pkgConfig
 ) where
 
+import Development.Shake
 import Data.List (intercalate, isPrefixOf, isSuffixOf)
 import Shakefile.C ( BuildFlags
                    , compilerFlags
@@ -28,11 +29,7 @@ import Shakefile.C ( BuildFlags
                    , systemIncludes
                    , userIncludes )
 import Shakefile.Label (append)
-import System.Environment (lookupEnv)
-import System.Exit (ExitCode(..))
 import System.FilePath (searchPathSeparator)
-import System.Process (readProcessWithExitCode)
-import System.SetEnv (setEnv, unsetEnv)
 
 -- ====================================================================
 -- PkgConfig
@@ -80,25 +77,19 @@ defaultOptions = Options {
   , static = False
   }
 
-pkgConfigWithOptions :: Options -> String -> IO (BuildFlags -> BuildFlags)
+pkgConfigWithOptions :: Options -> String -> Action (BuildFlags -> BuildFlags)
 pkgConfigWithOptions options pkg = do
-  resetPkgConfigPath <- case searchPath options of
-                          Nothing -> return (return ())
-                          Just path -> do
-                            old <- lookupEnv "PKG_CONFIG_PATH"
-                            setEnv "PKG_CONFIG_PATH" (intercalate [searchPathSeparator] path)
-                            return $ case old of
-                                      Nothing -> unsetEnv "PKG_CONFIG_PATH"
-                                      Just value -> setEnv "PKG_CONFIG_PATH" value
+  env <- case searchPath options of
+    Nothing -> return []
+    Just path -> do
+      env <- addEnv [("PKG_CONFIG_PATH", intercalate [searchPathSeparator] path)]
+      return [env]
   let flags = if static options then ["--static"] else []
-  (code1, cflags, _) <- readProcessWithExitCode "pkg-config" (flags ++ ["--cflags", pkg]) ""
-  (code2, ldflags, _) <- readProcessWithExitCode "pkg-config" (flags ++ ["--libs", pkg]) ""
-  let result = if code1 == ExitSuccess && code2 == ExitSuccess
-               then   parseCflags (parseFlags cflags)
-                    . parseLibs (parseFlags ldflags)
-               else const $ error $ "pkg-config: package " ++ pkg ++ " not found"
-  resetPkgConfigPath
-  return result
+      pkgconfig which = command ([Traced ""] ++ env) "pkg-config" (flags ++ ["--" ++ which, pkg])
+  Stdout cflags <- pkgconfig "cflags"
+  Stdout libs <- pkgconfig "libs"
+  return (  parseCflags (parseFlags cflags)
+          . parseLibs (parseFlags libs) )
 
-pkgConfig :: String -> IO (BuildFlags -> BuildFlags)
+pkgConfig :: String -> Action (BuildFlags -> BuildFlags)
 pkgConfig = pkgConfigWithOptions defaultOptions
