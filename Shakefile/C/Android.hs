@@ -148,7 +148,7 @@ abiString (Arm Armv6) = "armeabi"
 abiString (Arm Armv7) = "armeabi-v7a"
 abiString (X86 _)     = "x86"
 
-native_app_glue :: FilePath -> SourceTree BuildFlags
+native_app_glue :: Monad m => FilePath -> SourceTree m BuildFlags
 native_app_glue ndk = SourceTree.flags (append systemIncludes [ndk </> "sources/android/native_app_glue"])
                         (SourceTree.files [ndk </> "sources/android/native_app_glue/android_native_app_glue.c"])
 

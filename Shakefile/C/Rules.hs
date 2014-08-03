@@ -36,21 +36,25 @@ mkObjectsDir path = takeDirectory path </> map tr (takeFileName path) ++ "_obj"
 
 buildProduct :: Linker
              -> ToolChain
-             -> SourceTree BuildFlags
+             -> SourceTree Action BuildFlags
              -> FilePath
              -> Rules FilePath
 buildProduct link toolChain sources resultPath = do
     let objectsDir = mkObjectsDir resultPath
         sources' = SourceTree.flags (get ToolChain.defaultBuildFlags toolChain) sources
-    objects <- forM (SourceTree.flatten sources') $ \(buildFlags, (src, deps)) -> do
+    objects <- forM (SourceTree.flatten sources') $ \(getBuildFlags, (src, deps)) -> do
         let obj = objectsDir </> makeRelative "/" (src <.> "o")
-        obj ?=> objectFile toolChain (buildFlags BuildFlags.defaultBuildFlags) src deps
+        obj ?=> \_ -> do
+          buildFlags <- getBuildFlags
+          objectFile toolChain (buildFlags BuildFlags.defaultBuildFlags) src deps obj
         return obj
-    resultPath ?=> link toolChain (SourceTree.collect sources' BuildFlags.defaultBuildFlags) objects
+    resultPath ?=> \_ -> do
+      buildFlags <- SourceTree.collect sources'
+      link toolChain (buildFlags BuildFlags.defaultBuildFlags) objects resultPath
     return resultPath
 
 -- | Rule for building an executable.
-executable :: ToolChain -> FilePath -> SourceTree BuildFlags -> Rules FilePath
+executable :: ToolChain -> FilePath -> SourceTree Action BuildFlags -> Rules FilePath
 executable toolChain resultPath sources =
     buildProduct
         (get linker toolChain Executable)
@@ -59,7 +63,7 @@ executable toolChain resultPath sources =
         (get linkResultFileName toolChain Executable resultPath)
 
 -- | Rule for building a static library.
-staticLibrary :: ToolChain -> FilePath -> SourceTree BuildFlags -> Rules FilePath
+staticLibrary :: ToolChain -> FilePath -> SourceTree Action BuildFlags -> Rules FilePath
 staticLibrary toolChain resultPath sources =
     buildProduct
         (get archiver toolChain)
@@ -68,7 +72,7 @@ staticLibrary toolChain resultPath sources =
         (get archiveFileName toolChain resultPath)
 
 -- | Rule for building a shared library.
-sharedLibrary :: ToolChain -> FilePath -> SourceTree BuildFlags -> Rules FilePath
+sharedLibrary :: ToolChain -> FilePath -> SourceTree Action BuildFlags -> Rules FilePath
 sharedLibrary toolChain resultPath sources =
     buildProduct
         (get linker toolChain SharedLibrary)
@@ -77,7 +81,7 @@ sharedLibrary toolChain resultPath sources =
         (get linkResultFileName toolChain SharedLibrary resultPath)
 
 -- | Rule for building a dynamic library.
-dynamicLibrary :: ToolChain -> FilePath -> SourceTree BuildFlags -> Rules FilePath
+dynamicLibrary :: ToolChain -> FilePath -> SourceTree Action BuildFlags -> Rules FilePath
 dynamicLibrary toolChain resultPath sources =
     buildProduct
         (get linker toolChain DynamicLibrary)
