@@ -145,5 +145,5 @@ universalBinary :: [FilePath] -> FilePath -> Rules FilePath
 universalBinary inputs output = do
     output ?=> \_ -> do
         need inputs
-        system' "lipo" $ ["-create", "-output", output] ++ inputs
+        command_ [] "lipo" $ ["-create", "-output", output] ++ inputs
     return output
