@@ -29,7 +29,7 @@ module Shakefile.C.NaCl (
 ) where
 
 import           Data.List (intercalate)
-import           Development.Shake (Rules, need, system', writeFileLines)
+import           Development.Shake
 import           Development.Shake.FilePath
 import           Data.Version (Version(..))
 import           Shakefile.C hiding (Arch)
@@ -67,31 +67,25 @@ hostString =
 pnaclTool :: String -> String
 pnaclTool = ("pnacl-"++)
 
-archiver_ :: Archiver
-archiver_ toolChain buildFlags inputs output = do
-    need inputs
-    system' (tool archiverCmd toolChain)
-          $  ["cr"]
-          ++ get archiverFlags buildFlags
-          ++ [output]
-          ++ inputs
-    system' (command (pnaclTool "ranlib") toolChain) [output]
-
 data Config = Debug | Release deriving (Eq, Show)
 
 toolChain :: FilePath -> Config -> Target -> ToolChain
 toolChain sdk config target =
     set variant LLVM
-  $ set prefix (Just (platformDir </> "toolchain" </> hostString ++ "_" ++ "pnacl"))
-  $ set compilerCmd (pnaclTool "clang")
-  $ set archiverCmd (pnaclTool "ar")
-  $ set archiver archiver_
-  $ set linkerCmd (pnaclTool "clang++")
-  $ set linkResultFileName (\linkResult ->
-      case linkResult of
-        Executable     -> (<.> "bc")
-        SharedLibrary  -> (<.> "so")
-        DynamicLibrary -> (<.> "so"))
+  $ set toolDirectory (Just (platformDir </> "toolchain" </> hostString ++ "_" ++ "pnacl" </> "bin"))
+  $ set toolPrefix "pnacl-"
+  $ set compilerCommand "clang"
+  $ set archiverCommand "ar"
+  $ set archiver (\toolChain buildFlags inputs output -> do
+      need inputs
+      command_ [] (tool toolChain archiverCommand)
+        $  ["cr"]
+        ++ get archiverFlags buildFlags
+        ++ [output]
+        ++ inputs
+      command_ [] (toolFromString toolChain "ranlib") [output]
+    )
+  $ set linkerCommand "clang++"
   $ set defaultBuildFlags
       ( append systemIncludes [includeDir]
       . append userIncludes [includeDir]
@@ -106,8 +100,8 @@ finalize :: ToolChain -> FilePath -> FilePath -> Rules FilePath
 finalize toolChain input output = do
   output ?=> \_ -> do
     need [input]
-    system' (command (pnaclTool "finalize") toolChain)
-            ["-o", output, input]
+    command_ [] (toolFromString toolChain "finalize")
+                ["-o", output, input]
   return output
 
 -- | Translate bit code to native code.
@@ -121,8 +115,8 @@ translate toolChain arch input output = do
           _ -> error $ "Unsupported architecture: " ++ show arch
   output ?=> \_ -> do
     need [input]
-    system' (command (pnaclTool "finalize") toolChain)
-            ["-arch", archString, "-o", output, input]
+    command_ [] (toolFromString toolChain "finalize")
+                ["-arch", archString, "-o", output, input]
   return output
 
 -- | Link against the Pepper C API library.

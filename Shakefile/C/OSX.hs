@@ -41,24 +41,8 @@ import           Shakefile.Label (append, get, prepend, set)
 import qualified System.Directory as Dir
 import           System.Process (readProcess)
 
-osxArchiver :: Archiver
-osxArchiver toolChain buildFlags inputs output = do
-    need inputs
-    system' (tool archiverCmd toolChain)
-          $  get archiverFlags buildFlags
-          ++ ["-static"]
-          ++ ["-o", output]
-          ++ inputs
-
 archFlags :: Target -> [String]
 archFlags target = ["-arch", archString (get targetArch target)]
-
-osxLinker :: LinkResult -> Linker
-osxLinker link toolChain =
-    case link of
-        Executable     -> defaultLinker toolChain
-        SharedLibrary  -> defaultLinker toolChain . prepend linkerFlags ["-dynamiclib"]
-        DynamicLibrary -> defaultLinker toolChain . prepend linkerFlags ["-bundle"]
 
 newtype DeveloperPath = DeveloperPath { developerPath :: FilePath }
 
@@ -121,17 +105,24 @@ getDefaultToolChain = do
 toolChain :: DeveloperPath -> Target -> ToolChain
 toolChain developer target =
     set variant LLVM
-  $ set prefix (Just (developerPath developer </> "Toolchains/XcodeDefault.xctoolchain/usr"))
-  $ set compilerCmd "clang"
-  $ set archiverCmd "libtool"
-  $ set archiver osxArchiver
-  $ set linkerCmd "clang++"
-  $ set linker osxLinker
-  $ set linkResultFileName (\linkResult ->
+  $ set toolDirectory (Just (developerPath developer </> "Toolchains/XcodeDefault.xctoolchain/usr/bin"))
+  $ set compilerCommand "clang"
+  $ set archiverCommand "libtool"
+  $ set archiver (\toolChain buildFlags inputs output -> do
+      need inputs
+      command_ [] (tool toolChain archiverCommand)
+        $  get archiverFlags buildFlags
+        ++ ["-static"]
+        ++ ["-o", output]
+        ++ inputs
+    )
+  $ set linkerCommand "clang++"
+  $ set linker (\linkResult toolChain ->
       case linkResult of
-        Executable     -> id
-        SharedLibrary  -> (<.> "dylib")
-        DynamicLibrary -> (<.> "dylib"))
+        Executable     -> defaultLinker toolChain
+        SharedLibrary  -> defaultLinker toolChain . prepend linkerFlags ["-dynamiclib"]
+        DynamicLibrary -> defaultLinker toolChain . prepend linkerFlags ["-bundle"]
+    )
   $ set defaultBuildFlags ( append preprocessorFlags [ "-isysroot", sysRoot ]
                           . append compilerFlags [(Nothing, archFlags target)]
                           . append linkerFlags (archFlags target ++ [ "-isysroot", sysRoot ]) )

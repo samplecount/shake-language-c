@@ -36,28 +36,30 @@ module Shakefile.C.ToolChain (
   , ToolChain
   , ToolChainVariant(..)
   , defaultToolChain
-  , toolChainFromEnvironment
+  , toolDirectory
+  , toolPrefix
   , variant
-  , prefix
-  , compilerCmd
-  , archiverCmd
+  , compilerCommand
+  , compiler
+  , archiverCommand
   , archiver
-  , archiveFileName
-  , linkerCmd
+  , linkerCommand
   , linker
-  , linkResultFileName
   , defaultBuildFlags
-  , command
-  , tool
-  , objectFile
+  , defaultCompiler
   , Archiver
   , defaultArchiver
   , Linker
   , defaultLinker
+  , toolFromString
+  , tool
+  , toolChainFromEnvironment
   , ToBuildPrefix(..)
 ) where
 
+import           Control.Applicative
 import           Data.Char (toLower)
+import           Data.List (isInfixOf)
 import           Development.Shake hiding (command)
 import qualified Development.Shake as Shake
 import           Development.Shake.FilePath
@@ -142,7 +144,7 @@ data Linkage = Static | Shared deriving (Enum, Eq, Show)
 
 data LinkResult = Executable
                 | SharedLibrary
-                | DynamicLibrary
+                | DynamicLibrary -- FIXME: Rename to LoadableLibrary
                 deriving (Enum, Eq, Show)
 
 data ToolChainVariant =
@@ -151,29 +153,43 @@ data ToolChainVariant =
   | LLVM
   deriving (Eq, Show)
 
-type Linker = ToolChain -> BuildFlags -> [FilePath] -> FilePath -> Shake.Action ()
-type Archiver = Linker
+type Compiler = ToolChain -> BuildFlags -> FilePath -> FilePath -> Action ()
+type Linker   = ToolChain -> BuildFlags -> [FilePath] -> FilePath -> Action ()
+type Archiver = ToolChain -> BuildFlags -> [FilePath] -> FilePath -> Action ()
 
 data ToolChain = ToolChain {
     _variant :: ToolChainVariant
-  , _prefix :: Maybe FilePath
-  , _compilerCmd :: String
-  , _archiverCmd :: String
+  , _toolDirectory :: Maybe FilePath
+  , _toolPrefix :: String
+  , _compilerCommand :: FilePath
+  , _compiler :: Compiler
+  , _archiverCommand :: FilePath
   , _archiver :: Archiver
-  , _archiveFileName :: FilePath -> FilePath
-  , _linkerCmd :: String
+  , _linkerCommand :: FilePath
   , _linker :: LinkResult -> Linker
-  -- Not sure whether this should be someplace else
-  , _linkResultFileName :: LinkResult -> FilePath -> FilePath
   , _defaultBuildFlags :: BuildFlags -> BuildFlags
   }
 
 mkLabel ''ToolChain
 
+defaultCompiler :: Compiler
+defaultCompiler toolChain buildFlags input output = do
+  need $ [input]
+  let depFile = output <.> "d"
+  command_ [] (tool toolChain compilerCommand)
+    $  concatMapFlag "-I" (get systemIncludes buildFlags)
+    ++ mapFlag "-iquote" (get userIncludes buildFlags)
+    ++ defineFlags buildFlags
+    ++ get preprocessorFlags buildFlags
+    ++ compilerFlagsFor (languageOf input) buildFlags
+    ++ ["-MD", "-MF", depFile]
+    ++ ["-c", "-o", output, input]
+  needMakefileDependencies depFile
+
 defaultArchiver :: Archiver
 defaultArchiver toolChain buildFlags inputs output = do
     need inputs
-    command_ [] (tool archiverCmd toolChain)
+    command_ [] (tool toolChain archiverCommand)
         $ get archiverFlags buildFlags
         ++ [output]
         ++ inputs
@@ -186,7 +202,7 @@ defaultLinker toolChain buildFlags inputs output = do
                     . prepend libraries (map (strip.dropExtension.takeFileName) localLibs)
                     $ buildFlags
     need $ inputs ++ localLibs
-    command_ [] (tool linkerCmd toolChain)
+    command_ [] (tool toolChain linkerCommand)
           $  inputs
           ++ get linkerFlags buildFlags'
           ++ concatMapFlag "-L" (get libraryPath buildFlags')
@@ -200,60 +216,52 @@ defaultToolChain :: ToolChain
 defaultToolChain =
     ToolChain {
         _variant = GCC
-      , _prefix = Nothing
-      , _compilerCmd = "gcc"
-      , _archiverCmd = "ar"
+      , _toolDirectory = Nothing
+      , _toolPrefix = ""
+      , _compilerCommand = "gcc"
+      , _compiler = defaultCompiler
+      , _archiverCommand = "ar"
       , _archiver = defaultArchiver
-      , _archiveFileName = (<.> "a")
-      , _linkerCmd = "gcc"
-      , _linker = \link toolChain ->
-            case link of
-                Executable -> defaultLinker toolChain
-                _          -> defaultLinker toolChain . append linkerFlags ["-shared"]
-      , _linkResultFileName = \linkResult ->
+      , _linkerCommand = "gcc"
+      , _linker = \linkResult linkerCmd ->
           case linkResult of
-            Executable     -> id
-            SharedLibrary  -> (<.> "so")
-            DynamicLibrary -> (<.> "so")
+            Executable -> defaultLinker linkerCmd
+            _          -> defaultLinker linkerCmd . append linkerFlags ["-shared"]
       , _defaultBuildFlags = id
       }
 
--- | Get the full path of an arbitrary toolchain command.
-command :: String -> ToolChain -> FilePath
-command name toolChain = maybe name (flip combine ("bin" </> name))
-                                    (get prefix toolChain)
+toolFromString :: ToolChain -> String -> FilePath
+toolFromString toolChain name =
+  let cmd = _toolPrefix toolChain ++ name
+  in maybe cmd (</> cmd) (_toolDirectory toolChain)
 
 -- | Get the full path of a predefined tool.
-tool :: (ToolChain :-> String) -> ToolChain -> FilePath
-tool getter toolChain = command (get getter toolChain) toolChain
+tool :: ToolChain -> (ToolChain :-> String) -> FilePath
+tool toolChain getter = toolFromString toolChain (get getter toolChain)
 
-toolChainFromEnvironment :: IO (ToolChain -> ToolChain)
-toolChainFromEnvironment = do
-  env <- getEnvironment
-  return $ apply env (set compilerCmd) "CC"
-         . apply env (set variant . parseVariant) "TOOLCHAIN_VARIANT"
+toolChainFromEnvironment :: Monad m => m (ToolChain -> ToolChain)
+toolChainFromEnvironment = return id
+
+toolChainFromEnvironment' :: Action (ToolChain -> ToolChain)
+toolChainFromEnvironment' = do
+  compiler <- getEnv "CC"
+  vendor <- getEnv "STIR_TOOLCHAIN_VENDOR"
+  return $ maybe id (set compilerCommand) compiler
+         . maybe id (set variant) ((vendor >>= parseVendor) <|> (compiler >>= vendorFromCommand))
   where
-    apply env f k = maybe id f (lookup k env)
-    parseVariant s =
+    parseVendor s =
       case map toLower s of
-        "gcc" -> GCC
-        "llvm" -> LLVM
-        "clang" -> LLVM
-        _ -> Generic
-
-objectFile :: ToolChain -> BuildFlags -> FilePath -> [FilePath] -> FilePath -> Action ()
-objectFile toolChain buildFlags input deps output = do
-  need $ [input] ++ deps
-  let depFile = output <.> "d"
-  command_ [] (tool compilerCmd toolChain)
-    $  concatMapFlag "-I" (get systemIncludes buildFlags)
-    ++ mapFlag "-iquote" (get userIncludes buildFlags)
-    ++ defineFlags buildFlags
-    ++ get preprocessorFlags buildFlags
-    ++ compilerFlagsFor (languageOf input) buildFlags
-    ++ ["-MD", "-MF", depFile]
-    ++ ["-c", "-o", output, input]
-  needMakefileDependencies depFile
+        "gcc" -> Just GCC
+        "llvm" -> Just LLVM
+        "clang" -> Just LLVM
+        _ -> Nothing
+    vendorFromCommand path =
+      let cmd = takeFileName path
+      in if "gcc" `isInfixOf` cmd || "g++" `isInfixOf` cmd
+         then Just GCC
+         else if "clang" `isInfixOf` cmd
+         then Just LLVM
+         else Just Generic
 
 class ToBuildPrefix a where
   toBuildPrefix :: a -> FilePath

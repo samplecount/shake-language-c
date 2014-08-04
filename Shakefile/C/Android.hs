@@ -51,27 +51,27 @@ target arch = mkTarget arch "linux" "androideabi"
 toolChain :: FilePath -> (ToolChainVariant, Version) -> Target -> ToolChain
 toolChain ndk (GCC, version) target =
     set variant GCC
-  $ set prefix (Just (ndk </> "toolchains"
-                          </> tcPrefix ++ showVersion version
+  $ set toolDirectory (Just (ndk </> "toolchains"
+                          </> toolChainPrefix target ++ showVersion version
                           </> "prebuilt"
-                          </> osPrefix))
-  $ set compilerCmd (mkTool "gcc")
-  $ set archiverCmd (mkTool "ar")
-  $ set linkerCmd (mkTool "g++")
+                          </> osPrefix
+                          </> "bin"))
+  $ set toolPrefix (toolChainPrefix target)
+  $ set compilerCommand "gcc"
+  $ set archiverCommand "ar"
+  $ set linkerCommand "g++"
   $ set defaultBuildFlags (mkDefaultBuildFlags ndk target)
   $ defaultToolChain
-  where
-    tcPrefix = toolChainPrefix target
-    mkTool x = tcPrefix ++ x
 toolChain ndk (LLVM, version) target =
     set variant LLVM
-  $ set prefix (Just (ndk </> "toolchains"
+  $ set toolDirectory (Just (ndk </> "toolchains"
                           </> "llvm-" ++ showVersion version
                           </> "prebuilt"
-                          </> osPrefix))
-  $ set compilerCmd "clang"
-  $ set archiverCmd "llvm-ar"
-  $ set linkerCmd "clang++"
+                          </> osPrefix
+                          </> "bin"))
+  $ set compilerCommand "clang"
+  $ set archiverCommand "llvm-ar"
+  $ set linkerCommand "clang++"
   $ set defaultBuildFlags (  mkDefaultBuildFlags ndk target
                            . append compilerFlags [(Nothing, ["-target", llvmTarget target]),
                                                    (Nothing, ["-gcc-toolchain", ndk </> "toolchains/arm-linux-androideabi-4.8/prebuilt" </> osPrefix])

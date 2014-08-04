@@ -38,38 +38,27 @@ getHostArch = do
 target :: Arch -> Target
 target arch = mkTarget arch "microsoft" "windows" (Platform "Windows" (Version [0] []))
 
-archiver_ :: Archiver
-archiver_ toolChain buildFlags inputs output = do
-    need inputs
-    command_ [] (tool archiverCmd toolChain)
-          $  ["cr"]
-          ++ get archiverFlags buildFlags
-          ++ [output]
-          ++ inputs
-    command_ [] (command "ranlib" toolChain) [output]
-
-linkResultFileName_ :: LinkResult -> FilePath -> FilePath
-linkResultFileName_ linkResult =
-  case linkResult of
-    Executable     -> (<.> "exe")
-    SharedLibrary  -> (<.> "dll")
-    DynamicLibrary -> (<.> "dll")
-
 toolChain :: ToolChainVariant -> ToolChain
 toolChain GCC =
     set variant GCC
-  $ set compilerCmd "gcc"
-  $ set archiverCmd "ar"
-  $ set archiver archiver_
-  $ set linkerCmd "g++"
-  $ set linkResultFileName linkResultFileName_
+  $ set compilerCommand "gcc"
+  $ set archiverCommand "ar"
+  $ set archiver (\toolChain buildFlags inputs output -> do
+      need inputs
+      command_ [] (tool toolChain archiverCommand)
+            $  ["cr"]
+            ++ get archiverFlags buildFlags
+            ++ [output]
+            ++ inputs
+      command_ [] (toolFromString toolChain "ranlib") [output]
+    )
+  $ set linkerCommand "g++"
   $ defaultToolChain
 toolChain LLVM =
     set variant LLVM
-  $ set compilerCmd "gcc"
-  $ set archiverCmd "ar"
-  $ set linkerCmd "g++"
-  $ set linkResultFileName linkResultFileName_
+  $ set compilerCommand "gcc"
+  $ set archiverCommand "ar"
+  $ set linkerCommand "g++"
   $ defaultToolChain
 toolChain Generic = toolChain GCC
 
