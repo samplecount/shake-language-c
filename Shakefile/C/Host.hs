@@ -17,6 +17,9 @@ module Shakefile.C.Host (
   , os
   , onlyOn
   , notOn
+  , executableExtension
+  , sharedLibraryExtension
+  , loadableLibraryExtension
   , getDefaultToolChain
 ) where
 
@@ -47,6 +50,29 @@ onlyOn which = onlyIf (os `elem` which)
 
 notOn :: [OS] -> (a -> a) -> (a -> a)
 notOn which = notIf (os `elem` which)
+
+-- | File extension for executables.
+executableExtension :: String
+executableExtension =
+  case os of
+    Windows -> "exe"
+    _       -> ""
+
+-- | File extension for dynamic shared libraries.
+sharedLibraryExtension :: String
+sharedLibraryExtension =
+  case os of
+    Linux   -> "so"
+    OSX     -> "dylib"
+    Windows -> "dll"
+
+-- | File extension for dynamic loadable libraries.
+loadableLibraryExtension :: String
+loadableLibraryExtension =
+  case os of
+    Linux   -> "so"
+    OSX     -> "bundle"
+    Windows -> "dll"
 
 -- | Get host's default tool chain.
 getDefaultToolChain :: IO (Target, ToolChain)
