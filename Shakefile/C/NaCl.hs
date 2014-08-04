@@ -64,9 +64,6 @@ hostString =
     OSX     -> "mac"
     Windows -> "win"
 
-pnaclTool :: String -> String
-pnaclTool = ("pnacl-"++)
-
 data Config = Debug | Release deriving (Eq, Show)
 
 toolChain :: FilePath -> Config -> Target -> ToolChain
