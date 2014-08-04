@@ -93,16 +93,14 @@ toolChain sdk config target =
         includeDir = platformDir </> "include"
 
 -- | Finalize a bit code executable.
-finalize :: ToolChain -> FilePath -> FilePath -> Rules FilePath
+finalize :: ToolChain -> FilePath -> FilePath -> Action ()
 finalize toolChain input output = do
-  output ?=> \_ -> do
-    need [input]
-    command_ [] (toolFromString toolChain "finalize")
-                ["-o", output, input]
-  return output
+  need [input]
+  command_ [] (toolFromString toolChain "finalize")
+              ["-o", output, input]
 
 -- | Translate bit code to native code.
-translate :: ToolChain -> C.Arch -> FilePath -> FilePath -> Rules FilePath
+translate :: ToolChain -> C.Arch -> FilePath -> FilePath -> Action ()
 translate toolChain arch input output = do
   let archString =
         case arch of
@@ -110,11 +108,9 @@ translate toolChain arch input output = do
           X86 X86_64 -> "x86-64"
           Arm Armv7  -> "armv7"
           _ -> error $ "Unsupported architecture: " ++ show arch
-  output ?=> \_ -> do
-    need [input]
-    command_ [] (toolFromString toolChain "finalize")
-                ["-arch", archString, "-o", output, input]
-  return output
+  need [input]
+  command_ [] (toolFromString toolChain "finalize")
+              ["-arch", archString, "-o", output, input]
 
 -- | Link against the Pepper C API library.
 libppapi :: BuildFlags -> BuildFlags
@@ -137,20 +133,18 @@ data Arch =
   | NaCl C.Arch
   deriving (Eq, Show)
 
-mk_nmf :: [(Arch, FilePath)] -> FilePath -> Rules FilePath
+mk_nmf :: [(Arch, FilePath)] -> FilePath -> Action ()
 mk_nmf inputs output = do
-  output ?=> \_ -> do
-    need $ map snd inputs
-    writeFileLines output $ [
-        "{"
-      , "  \"program\": {"
-      ]
-      ++ intercalate [","] (map program inputs) ++
-      [ "    }"
-      , "  }"
-      , "}"
-      ]
-  return output
+  need $ map snd inputs
+  writeFileLines output $ [
+      "{"
+    , "  \"program\": {"
+    ]
+    ++ intercalate [","] (map program inputs) ++
+    [ "    }"
+    , "  }"
+    , "}"
+    ]
   where
     program (PNaCl, input) = [
         "    \"portable\": {"
