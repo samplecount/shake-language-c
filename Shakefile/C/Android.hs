@@ -16,7 +16,6 @@ module Shakefile.C.Android (
     platform
   , target
   , toolChain
-  , standaloneToolChain
   , abiString
   , gnustl
   , libcxx
@@ -48,15 +47,6 @@ osPrefix = System.os ++ "-" ++ cpu
 
 target :: Arch -> Platform -> Target
 target arch = mkTarget arch "linux" "androideabi"
-
-standaloneToolChain :: FilePath -> Target -> ToolChain
-standaloneToolChain path target =
-    set prefix (Just path)
-  $ set compilerCmd (mkTool "gcc")
-  $ set archiverCmd (mkTool "ar")
-  $ set linkerCmd (mkTool "g++")
-  $ defaultToolChain
-  where mkTool x = targetString target ++ "-" ++ x
 
 toolChain :: FilePath -> (ToolChainVariant, Version) -> Target -> ToolChain
 toolChain ndk (GCC, version) target =
