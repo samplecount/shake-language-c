@@ -49,13 +49,14 @@ target :: Arch -> Platform -> Target
 target arch = mkTarget arch "linux" "androideabi"
 
 toolChain :: FilePath -> (ToolChainVariant, Version) -> Target -> ToolChain
+toolChain "" (_, _) _ = error "Empty NDK directory"
 toolChain ndk (GCC, version) target =
     set variant GCC
   $ set toolDirectory (Just (ndk </> "toolchains"
-                          </> toolChainPrefix target ++ showVersion version
-                          </> "prebuilt"
-                          </> osPrefix
-                          </> "bin"))
+                                 </> toolChainPrefix target ++ showVersion version
+                                 </> "prebuilt"
+                                 </> osPrefix
+                                 </> "bin"))
   $ set toolPrefix (toolChainPrefix target)
   $ set compilerCommand "gcc"
   $ set archiverCommand "ar"
@@ -65,10 +66,10 @@ toolChain ndk (GCC, version) target =
 toolChain ndk (LLVM, version) target =
     set variant LLVM
   $ set toolDirectory (Just (ndk </> "toolchains"
-                          </> "llvm-" ++ showVersion version
-                          </> "prebuilt"
-                          </> osPrefix
-                          </> "bin"))
+                                 </> "llvm-" ++ showVersion version
+                                 </> "prebuilt"
+                                 </> osPrefix
+                                 </> "bin"))
   $ set compilerCommand "clang"
   $ set archiverCommand "llvm-ar"
   $ set linkerCommand "clang++"
