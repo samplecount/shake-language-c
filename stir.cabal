@@ -62,3 +62,4 @@ Library
     , setenv
     , shake >= 0.10
     , split
+    , unordered-containers
