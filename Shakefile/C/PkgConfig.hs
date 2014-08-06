@@ -54,17 +54,7 @@ parseLibs (x:xs)
   | otherwise = parseLibs xs . append linkerFlags [x]
 
 parseFlags :: String -> [String]
-parseFlags = unescape . words . head . lines
-  where
-    escape = "\\"
-    isEscaped = isSuffixOf escape
-    dropEscape = (++" ") . reverse . drop (length escape) . reverse
-    -- dropEscape = (++" ")
-    unescape [] = []
-    unescape [x] = [if isEscaped x then dropEscape x else x]
-    unescape (x1:x2:xs)
-      | isEscaped x1 = unescape ((dropEscape x1 ++ x2):xs)
-      | otherwise = [x1] ++ unescape (x2:xs)
+parseFlags = words' . head . lines
 
 data Options = Options {
     searchPath :: Maybe [FilePath]

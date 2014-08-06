@@ -19,8 +19,10 @@ module Shakefile.C.Util (
   , (?=>)
   , onlyIf
   , notIf
+  , words'
 ) where
 
+import Data.List
 import Development.Shake
 import Development.Shake.FilePath
 
@@ -49,3 +51,19 @@ onlyIf b f = if b then f else id
 
 notIf :: Bool -> (a -> a) -> (a -> a)
 notIf b f = if b then id else f
+
+-- | Splits a list of space separated strings.
+--
+-- Spaces can be escaped by '\\'.
+words' :: String -> [String]
+words' = unescape . words
+  where
+    escape = "\\"
+    escapeLength = length escape
+    isEscaped = isSuffixOf escape
+    dropEscape = (++" ") . reverse . drop escapeLength . reverse
+    unescape [] = []
+    unescape [x] = [if isEscaped x then dropEscape x else x]
+    unescape (x1:x2:xs)
+      | isEscaped x1 = unescape ((dropEscape x1 ++ x2):xs)
+      | otherwise = [x1] ++ unescape (x2:xs)
