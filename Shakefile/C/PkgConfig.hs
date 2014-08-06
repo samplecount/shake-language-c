@@ -29,6 +29,7 @@ import Shakefile.C ( BuildFlags
                    , systemIncludes
                    , userIncludes )
 import Shakefile.Label (append)
+import Shakefile.C.Util (words')
 import System.FilePath (searchPathSeparator)
 
 -- ====================================================================
