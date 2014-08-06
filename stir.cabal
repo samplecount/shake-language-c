@@ -35,21 +35,20 @@ Library
   Exposed-Modules:
     Shakefile.C
     Shakefile.C.Android
+    Shakefile.C.BuildFlags
     Shakefile.C.Host
+    Shakefile.C.Language
     Shakefile.C.Linux
     Shakefile.C.NaCl
     Shakefile.C.OSX
     Shakefile.C.PkgConfig
+    Shakefile.C.Rules
+    Shakefile.C.ToolChain
+    Shakefile.C.Util
     Shakefile.C.Windows
     Shakefile.Configuration
     Shakefile.Label
     Shakefile.SourceTree
-  Other-Modules:
-    Shakefile.C.BuildFlags
-    Shakefile.C.Language
-    Shakefile.C.Rules
-    Shakefile.C.ToolChain
-    Shakefile.C.Util
   Ghc-Options: -Wall
   Build-Depends:
       base >= 4 && < 5
