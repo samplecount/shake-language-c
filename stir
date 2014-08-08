@@ -121,6 +121,13 @@ main = do
   sandbox <- configSandbox config
 
   args <- Env.getArgs
+
+  let build' args = case Dist.executables pkg of
+                      [] -> error $ "No executables found in " ++ cabalFile
+                      (exe:_) -> build sandbox
+                                    (Dist.exeName exe)
+                                    (["+RTS", "-N", "-RTS"] ++ args)
+
   case args of
     ("update":rest) -> do
       update sandbox
@@ -132,9 +139,4 @@ main = do
              ++ rest
     ["clean-stir"] ->
       clean sandbox
-    _ -> do
-      case Dist.executables pkg of
-        [] -> error $ "No executables found in " ++ cabalFile
-        (exe:_) -> build sandbox
-                      (Dist.exeName exe)
-                      (["+RTS", "-N", "-RTS"] ++ args)
+    _ -> build' args
