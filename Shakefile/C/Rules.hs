@@ -19,8 +19,6 @@ module Shakefile.C.Rules (
   , dynamicLibrary
 ) where
 
-import           Control.Applicative ((<$>))
-import qualified Data.HashMap.Strict as Map
 import           Development.Shake
 import           Development.Shake.FilePath
 import           Shakefile.C.BuildFlags as BuildFlags
@@ -32,27 +30,35 @@ mkObjectsDir path = takeDirectory path </> map tr (takeFileName path) ++ "_obj"
     where tr '.' = '_'
           tr x   = x
 
-buildProduct :: Linker -> ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
+buildProduct :: Linker
+             -> ToolChain
+             -> FilePath
+             -> Action (BuildFlags -> BuildFlags)
+             -> Action [FilePath]
+             -> Rules FilePath
 buildProduct link toolChain result getBuildFlags getSources = do
   let objectsDir = mkObjectsDir result
-  objectsMap <- newCache $ \() -> do
+  cachedObjects <- newCache $ \() -> do
     sources <- getSources
-    return $ Map.fromList
-           $ map (\src -> (objectsDir </> makeRelative "/" (src <.> "o"), src))
-                 sources
+    return $ [ objectsDir </> makeRelative "/" (src <.> if isAbsolute src then "abs.o" else "rel.o")
+             | src <- sources ]
   cachedBuildFlags <- newCache $ \() -> getBuildFlags
   result *> \_ -> do
     buildFlags <- cachedBuildFlags ()
-    objs <- Map.keys <$> objectsMap ()
+    objs <- cachedObjects ()
     need objs
     link
       toolChain
       (buildFlags . get ToolChain.defaultBuildFlags toolChain $ BuildFlags.defaultBuildFlags)
       objs
       result
-  (objectsDir ++ "//*.o") *> \obj -> do
+  (dropTrailingPathSeparator objectsDir ++ "//*.o") *> \obj -> do
     buildFlags <- cachedBuildFlags ()
-    Just src <- Map.lookup obj <$> objectsMap ()
+    -- Compute source file name from object file name
+    let src = case splitExtension $ dropExtension $ makeRelative objectsDir obj of
+                (x, ".abs") -> "/" </> x -- Source file had absolute path
+                (x, ".rel") -> x
+                (_, ext)    -> error $ "BUG: Unexpected object file extension " ++ ext
     (get compiler toolChain)
       toolChain
       (buildFlags . get ToolChain.defaultBuildFlags toolChain $ BuildFlags.defaultBuildFlags)
