@@ -46,6 +46,7 @@ Library
     Shakefile.C.ToolChain
     Shakefile.C.Util
     Shakefile.C.Windows
+    Shakefile.Config
     Shakefile.Configuration
     Shakefile.Label
     Shakefile.SourceTree
