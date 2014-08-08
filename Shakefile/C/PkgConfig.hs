@@ -17,10 +17,13 @@ module Shakefile.C.PkgConfig (
   , defaultOptions
   , pkgConfigWithOptions
   , pkgConfig
+  , fromConfig
 ) where
 
+import Control.Applicative
+import Data.Char (toLower)
+import Data.List (intercalate, isPrefixOf)
 import Development.Shake
-import Data.List (intercalate, isPrefixOf, isSuffixOf)
 import Shakefile.C ( BuildFlags
                    , compilerFlags
                    , libraries
@@ -84,3 +87,19 @@ pkgConfigWithOptions options pkg = do
 
 pkgConfig :: String -> Action (BuildFlags -> BuildFlags)
 pkgConfig = pkgConfigWithOptions defaultOptions
+
+fromConfig :: (String -> Action (Maybe String)) -> Action (BuildFlags -> BuildFlags)
+fromConfig cfg = do
+  config_searchPath <- fmap words' <$> cfg "PkgConfig.options.searchPath"
+  config_static <- fmap (bool . words) <$> cfg "PkgConfig.options.static"
+  config_packages <- fmap words <$> cfg "PkgConfig.packages"
+  let options = defaultOptions {
+      searchPath = config_searchPath,
+      static = maybe False id config_static
+    }
+  flags <- mapM (pkgConfigWithOptions options)
+                (maybe [] id config_packages)
+  return $ foldl (.) id $ flags
+  where
+    bool (x:_) = map toLower x == "true"
+    bool _ = False
