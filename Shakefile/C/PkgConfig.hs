@@ -95,8 +95,8 @@ fromConfigWithOptions initialOptions cfg = do
   config_static <- fmap (bool . words) <$> cfg "PkgConfig.options.static"
   config_packages <- fmap words <$> cfg "PkgConfig.packages"
   let options = initialOptions {
-      searchPath = config_searchPath,
-      static = maybe False id config_static
+      searchPath = maybe (searchPath initialOptions) Just config_searchPath,
+      static = maybe (static initialOptions) id config_static
     }
   flags <- mapM (pkgConfigWithOptions options)
                 (maybe [] id config_packages)
