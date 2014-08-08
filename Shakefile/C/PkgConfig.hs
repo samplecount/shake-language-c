@@ -18,6 +18,7 @@ module Shakefile.C.PkgConfig (
   , pkgConfigWithOptions
   , pkgConfig
   , fromConfig
+  , fromConfigWithOptions
 ) where
 
 import Control.Applicative
@@ -88,12 +89,12 @@ pkgConfigWithOptions options pkg = do
 pkgConfig :: String -> Action (BuildFlags -> BuildFlags)
 pkgConfig = pkgConfigWithOptions defaultOptions
 
-fromConfig :: (String -> Action (Maybe String)) -> Action (BuildFlags -> BuildFlags)
-fromConfig cfg = do
+fromConfigWithOptions :: Options -> (String -> Action (Maybe String)) -> Action (BuildFlags -> BuildFlags)
+fromConfigWithOptions initialOptions cfg = do
   config_searchPath <- fmap words' <$> cfg "PkgConfig.options.searchPath"
   config_static <- fmap (bool . words) <$> cfg "PkgConfig.options.static"
   config_packages <- fmap words <$> cfg "PkgConfig.packages"
-  let options = defaultOptions {
+  let options = initialOptions {
       searchPath = config_searchPath,
       static = maybe False id config_static
     }
@@ -103,3 +104,6 @@ fromConfig cfg = do
   where
     bool (x:_) = map toLower x == "true"
     bool _ = False
+
+fromConfig :: (String -> Action (Maybe String)) -> Action (BuildFlags -> BuildFlags)
+fromConfig = fromConfigWithOptions defaultOptions
