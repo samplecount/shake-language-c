@@ -17,7 +17,6 @@
 
 module Shakefile.C.ToolChain (
     Platform(..)
-  , platformString
   , Arch(..)
   , archShortString
   , archString
@@ -74,9 +73,6 @@ data Platform = Platform {
     platformName :: String
   , platformVersion :: Version
   } deriving (Eq, Show)
-
-platformString :: Platform -> String
-platformString = map toLower . platformName
 
 data X86Version =
     I386
@@ -258,7 +254,7 @@ class ToBuildPrefix a where
   toBuildPrefix :: a -> FilePath
 
 instance ToBuildPrefix Platform where
-  toBuildPrefix = platformString
+  toBuildPrefix = map toLower . platformName
 
 instance ToBuildPrefix Target where
    toBuildPrefix target =
