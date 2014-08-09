@@ -40,7 +40,7 @@ import qualified System.Directory as Dir
 import           System.Process (readProcess)
 
 archFlags :: Target -> [String]
-archFlags target = ["-arch", archString (targetArch target)]
+archFlags t = ["-arch", archString (targetArch t)]
 
 newtype DeveloperPath = DeveloperPath { developerPath :: FilePath } deriving (Show)
 
@@ -71,9 +71,9 @@ target :: Platform -> Arch -> Target
 target = Target OSX
 
 platformSDKPath :: DeveloperPath -> Platform -> Version -> FilePath
-platformSDKPath developer platform sdkVersion =
+platformSDKPath developer platform version =
       sdkDirectory developer (platformName platform)
-  </> platformName platform ++ showVersion sdkVersion ++ ".sdk"
+  </> platformName platform ++ showVersion version ++ ".sdk"
 
 getLatestPlatform :: DeveloperPath -> (Version -> Platform) -> IO Platform
 getLatestPlatform developer mkPlatform = do
@@ -108,31 +108,31 @@ sdkVersion :: Int -> Int -> Version
 sdkVersion major minor = Version [major, minor] []
 
 toolChain :: DeveloperPath -> Version -> Target -> ToolChain
-toolChain developer sdkVersion target =
+toolChain developer version t =
     set variant LLVM
   $ set toolDirectory (Just (developerPath developer </> "Toolchains/XcodeDefault.xctoolchain/usr/bin"))
   $ set compilerCommand "clang"
   $ set archiverCommand "libtool"
-  $ set archiver (\toolChain buildFlags inputs output -> do
+  $ set archiver (\tc flags inputs output -> do
       need inputs
-      command_ [] (tool toolChain archiverCommand)
-        $  get archiverFlags buildFlags
+      command_ [] (tool tc archiverCommand)
+        $  get archiverFlags flags
         ++ ["-static"]
         ++ ["-o", output]
         ++ inputs
     )
   $ set linkerCommand "clang++"
-  $ set linker (\linkResult toolChain ->
-      case linkResult of
-        Executable      -> defaultLinker toolChain
-        SharedLibrary   -> defaultLinker toolChain . prepend linkerFlags ["-dynamiclib"]
-        LoadableLibrary -> defaultLinker toolChain . prepend linkerFlags ["-bundle"]
+  $ set linker (\lr tc ->
+      case lr of
+        Executable      -> defaultLinker tc
+        SharedLibrary   -> defaultLinker tc . prepend linkerFlags ["-dynamiclib"]
+        LoadableLibrary -> defaultLinker tc . prepend linkerFlags ["-bundle"]
     )
   $ set defaultBuildFlags ( append preprocessorFlags [ "-isysroot", sysRoot ]
-                          . append compilerFlags [(Nothing, archFlags target)]
-                          . append linkerFlags (archFlags target ++ [ "-isysroot", sysRoot ]) )
+                          . append compilerFlags [(Nothing, archFlags t)]
+                          . append linkerFlags (archFlags t ++ [ "-isysroot", sysRoot ]) )
   $ defaultToolChain
-  where sysRoot = platformSDKPath developer (targetPlatform target) sdkVersion
+  where sysRoot = platformSDKPath developer (targetPlatform t) version
 
 macosx_version_min :: Version -> BuildFlags -> BuildFlags
 macosx_version_min version =

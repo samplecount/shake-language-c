@@ -26,15 +26,15 @@ import           Control.Arrow
 import           Development.Shake.FilePath
 import           Data.Version (Version(..), showVersion)
 import           Shakefile.C
-import           Shakefile.Label (get, set, append)
+import           Shakefile.Label (set, append)
 import qualified System.Info as System
 
 unsupportedArch :: Arch -> a
 unsupportedArch arch = error $ "Unsupported Android target architecture " ++ archString arch
 
 toolChainPrefix :: Target -> String
-toolChainPrefix target =
-    case targetArch target of
+toolChainPrefix x =
+    case targetArch x of
         X86 _ -> "x86-"
         Arm _ -> "arm-linux-androideabi-"
         arch  -> unsupportedArch arch
@@ -71,7 +71,7 @@ mkDefaultBuildFlags ndk version arch =
               </> "arch-" ++ case arch of
                               (X86 _) -> "x86"
                               (Arm _) -> "arm"
-                              arch    -> unsupportedArch arch
+                              _       -> unsupportedArch arch
     march = "-march=" ++ case arch of
                           (Arm Armv5) -> "armv5te"
                           (Arm Armv6) -> "armv5te"
@@ -88,52 +88,56 @@ apiVersion n = Version [n] []
 
 toolChain :: FilePath -> Version -> (ToolChainVariant, Version) -> Target -> ToolChain
 toolChain "" _ (_, _) _ = error "Empty NDK directory"
-toolChain ndk apiVersion (GCC, toolChainVersion) target =
+toolChain ndk version (GCC, tcVersion) t =
     set variant GCC
   $ set toolDirectory (Just (ndk </> "toolchains"
-                                 </> toolChainPrefix target ++ showVersion toolChainVersion
+                                 </> toolChainPrefix t ++ showVersion tcVersion
                                  </> "prebuilt"
                                  </> osPrefix
                                  </> "bin"))
-  $ set toolPrefix (toolChainPrefix target)
+  $ set toolPrefix (toolChainPrefix t)
   $ set compilerCommand "gcc"
   $ set archiverCommand "ar"
   $ set linkerCommand "g++"
-  $ set defaultBuildFlags (mkDefaultBuildFlags ndk apiVersion (targetArch target))
+  $ set defaultBuildFlags (mkDefaultBuildFlags ndk version (targetArch t))
   $ defaultToolChain
-toolChain ndk apiVersion (LLVM, toolChainVersion) target =
+toolChain ndk version (LLVM, tcVersion) t =
     set variant LLVM
   $ set toolDirectory (Just (ndk </> "toolchains"
-                                 </> "llvm-" ++ showVersion toolChainVersion
+                                 </> "llvm-" ++ showVersion tcVersion
                                  </> "prebuilt"
                                  </> osPrefix
                                  </> "bin"))
   $ set compilerCommand "clang"
   $ set archiverCommand "llvm-ar"
   $ set linkerCommand "clang++"
-  $ set defaultBuildFlags (  mkDefaultBuildFlags ndk apiVersion (targetArch target)
-                           . append compilerFlags [(Nothing, ["-target", llvmTarget target]),
-                                                   (Nothing, ["-gcc-toolchain", ndk </> "toolchains/arm-linux-androideabi-4.8/prebuilt" </> osPrefix])
-                                                  ])
+  $ set defaultBuildFlags (
+        mkDefaultBuildFlags ndk version (targetArch t)
+      . append compilerFlags [
+            (Nothing, ["-target", llvmTarget t])
+          , (Nothing, [ "-gcc-toolchain"
+                      , ndk </> "toolchains/arm-linux-androideabi-4.8/prebuilt" </> osPrefix ])
+          ]
+    )
   $ defaultToolChain
   where
-    llvmTarget target =
-      case targetArch target of
+    llvmTarget x =
+      case targetArch x of
         Arm Armv5 -> "armv5te-none-linux-androideabi"
         Arm Armv7 -> "armv7-none-linux-androideabi"
-        X86 I386 -> "i686-none-linux-android"
-        arch -> unsupportedArch arch
-toolChain _ _ (variant, version) _ =
+        X86 I386  -> "i686-none-linux-android"
+        arch      -> unsupportedArch arch
+toolChain _ _ (tcVariant, tcVersion) _ =
   error $ "Unknown tool chain variant "
-        ++ show variant ++ " "
-        ++ showVersion version
+        ++ show tcVariant ++ " "
+        ++ showVersion tcVersion
 
 abiString :: Arch -> String
 abiString (Arm Armv5) = "armeabi"
 abiString (Arm Armv6) = "armeabi"
 abiString (Arm Armv7) = "armeabi-v7a"
 abiString (X86 _)     = "x86"
-abiString arch        = error $ "Unsupported Android target architecture " ++ archString arch
+abiString arch        = unsupportedArch arch
 
 native_app_glue :: FilePath -> ([FilePath], BuildFlags -> BuildFlags)
 native_app_glue ndk =
@@ -141,18 +145,18 @@ native_app_glue ndk =
   , append systemIncludes [ndk </> "sources/android/native_app_glue"] )
 
 gnustl :: Version -> Linkage -> FilePath -> Target -> BuildFlags -> BuildFlags
-gnustl version linkage ndk target =
+gnustl version linkage ndk t =
     append systemIncludes [stlPath </> "include", stlPath </> "libs" </> abi </> "include"]
   . append libraryPath [stlPath </> "libs" </> abi]
   . append libraries [lib]
     where stlPath = ndk </> "sources/cxx-stl/gnu-libstdc++" </> showVersion version
-          abi = abiString (targetArch target)
+          abi = abiString (targetArch t)
           lib = case linkage of
                   Static -> "gnustl_static"
                   Shared -> "gnustl_shared"
 
 libcxx :: Linkage -> FilePath -> Target -> BuildFlags -> BuildFlags
-libcxx linkage ndk target =
+libcxx linkage ndk t =
     append systemIncludes [ libcxxPath </> "libcxx" </> "include"
                           -- NOTE: libcxx needs to be first in include path!
                           , stlPath </> "gabi++" </> "include"
@@ -163,7 +167,7 @@ libcxx linkage ndk target =
   . append linkerFlags flags
     where stlPath = ndk </> "sources" </> "cxx-stl"
           libcxxPath = stlPath </> "llvm-libc++"
-          abi = abiString (targetArch target)
+          abi = abiString (targetArch t)
           lib = case linkage of
                   Static -> "libc++_static"
                   Shared -> "libc++_shared"

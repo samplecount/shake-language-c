@@ -18,7 +18,6 @@ module Shakefile.C.Linux (
 ) where
 
 import Data.Label (get, set)
-import Data.Version (Version(..))
 import Development.Shake
 import Shakefile.C
 import System.Process (readProcess)
@@ -36,14 +35,14 @@ target :: Arch -> Target
 target = Target Linux (Platform "linux")
 
 platformArchiver :: Archiver
-platformArchiver toolChain buildFlags inputs output = do
+platformArchiver tc buildFlags inputs output = do
     need inputs
-    command_ [] (tool toolChain archiverCommand)
+    command_ [] (tool tc archiverCommand)
       $  ["cr"]
       ++ get archiverFlags buildFlags
       ++ [output]
       ++ inputs
-    command_ [] (toolFromString toolChain "ranlib") [output]
+    command_ [] (toolFromString tc "ranlib") [output]
 
 toolChain :: ToolChainVariant -> ToolChain
 toolChain GCC =
@@ -63,5 +62,5 @@ toolChain Generic = toolChain GCC
 
 getDefaultToolChain :: IO (Target, Action ToolChain)
 getDefaultToolChain = do
-    target <- fmap target getHostArch
-    return (target, return $ toolChain GCC)
+    t <- fmap target getHostArch
+    return (t, return $ toolChain GCC)

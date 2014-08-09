@@ -17,13 +17,10 @@ module Shakefile.C.Windows (
   , getDefaultToolChain
 ) where
 
-import Data.Label (get, set)
-import Data.Version (Version(..))
-import Development.Shake
-import Shakefile.C
-import System.FilePath ((<.>))
+import           Data.Label (get, set)
+import           Development.Shake
+import           Shakefile.C
 import qualified System.Info as System
-import System.Process (readProcess)
 
 getHostArch :: IO Arch
 getHostArch = do
@@ -43,14 +40,14 @@ toolChain GCC =
     set variant GCC
   $ set compilerCommand "gcc"
   $ set archiverCommand "ar"
-  $ set archiver (\toolChain buildFlags inputs output -> do
+  $ set archiver (\tc flags inputs output -> do
       need inputs
-      command_ [] (tool toolChain archiverCommand)
+      command_ [] (tool tc archiverCommand)
             $  ["cr"]
-            ++ get archiverFlags buildFlags
+            ++ get archiverFlags flags
             ++ [output]
             ++ inputs
-      command_ [] (toolFromString toolChain "ranlib") [output]
+      command_ [] (toolFromString tc "ranlib") [output]
     )
   $ set linkerCommand "g++"
   $ defaultToolChain
@@ -64,5 +61,5 @@ toolChain Generic = toolChain GCC
 
 getDefaultToolChain :: IO (Target, Action ToolChain)
 getDefaultToolChain = do
-    target <- fmap target getHostArch
-    return (target, return $ toolChain Generic)
+    t <- fmap target getHostArch
+    return (t, return $ toolChain Generic)

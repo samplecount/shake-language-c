@@ -144,8 +144,8 @@ defaultToolChain =
 
 toolFromString :: ToolChain -> String -> FilePath
 toolFromString toolChain name =
-  let cmd = _toolPrefix toolChain ++ name
-  in maybe cmd (</> cmd) (_toolDirectory toolChain)
+  let c = _toolPrefix toolChain ++ name
+  in maybe c (</> c) (_toolDirectory toolChain)
 
 -- | Get the full path of a predefined tool.
 tool :: ToolChain -> (ToolChain :-> String) -> FilePath
@@ -153,10 +153,10 @@ tool toolChain getter = toolFromString toolChain (get getter toolChain)
 
 applyEnv :: ToolChain -> Action ToolChain
 applyEnv toolChain = do
-  compiler <- getEnv "CC"
+  cc <- getEnv "CC"
   vendor <- getEnv "STIR_TOOLCHAIN_VENDOR"
-  return $ maybe id (set compilerCommand) compiler
-         . maybe id (set variant) ((vendor >>= parseVendor) <|> (compiler >>= vendorFromCommand))
+  return $ maybe id (set compilerCommand) cc
+         . maybe id (set variant) ((vendor >>= parseVendor) <|> (cc >>= vendorFromCommand))
          $ toolChain
   where
     parseVendor s =
@@ -166,9 +166,9 @@ applyEnv toolChain = do
         "clang" -> Just LLVM
         _ -> Nothing
     vendorFromCommand path =
-      let cmd = takeFileName path
-      in if "gcc" `isInfixOf` cmd || "g++" `isInfixOf` cmd
+      let x = takeFileName path
+      in if "gcc" `isInfixOf` x || "g++" `isInfixOf` x
          then Just GCC
-         else if "clang" `isInfixOf` cmd
+         else if "clang" `isInfixOf` x
          then Just LLVM
          else Just Generic

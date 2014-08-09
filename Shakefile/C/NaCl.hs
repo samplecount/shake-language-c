@@ -34,7 +34,6 @@ import           Development.Shake.FilePath
 import           Data.Version (Version(..))
 import           Shakefile.C hiding (Arch)
 import qualified Shakefile.C as C
-import           Shakefile.C.Host (OS(..))
 import qualified Shakefile.C.Host as Host
 import           Shakefile.Label (append, get, set)
 
@@ -57,20 +56,20 @@ hostString =
 data Config = Debug | Release deriving (Eq, Show)
 
 toolChain :: FilePath -> Version -> Config -> Target -> ToolChain
-toolChain sdk sdkVersion config target =
+toolChain sdk sdkVersion config t =
     set variant LLVM
   $ set toolDirectory (Just (platformDir </> "toolchain" </> hostString ++ "_" ++ "pnacl" </> "bin"))
   $ set toolPrefix "pnacl-"
   $ set compilerCommand "clang"
   $ set archiverCommand "ar"
-  $ set archiver (\toolChain buildFlags inputs output -> do
+  $ set archiver (\tc flags inputs output -> do
       need inputs
-      command_ [] (tool toolChain archiverCommand)
+      command_ [] (tool tc archiverCommand)
         $  ["cr"]
-        ++ get archiverFlags buildFlags
+        ++ get archiverFlags flags
         ++ [output]
         ++ inputs
-      command_ [] (toolFromString toolChain "ranlib") [output]
+      command_ [] (toolFromString tc "ranlib") [output]
     )
   $ set linkerCommand "clang++"
   $ set defaultBuildFlags
@@ -82,7 +81,7 @@ toolChain sdk sdkVersion config target =
   where
     platformDir =
           sdk
-      </> platformName (targetPlatform target)
+      </> platformName (targetPlatform t)
           ++ "_"
           ++ case versionTags sdkVersion of
               ["canary"] -> "canary"
@@ -91,23 +90,23 @@ toolChain sdk sdkVersion config target =
 
 -- | Finalize a bit code executable.
 finalize :: ToolChain -> FilePath -> FilePath -> Action ()
-finalize toolChain input output = do
+finalize tc input output = do
   need [input]
-  command_ [] (toolFromString toolChain "finalize")
+  command_ [] (toolFromString tc "finalize")
               ["-o", output, input]
 
 -- | Translate bit code to native code.
 translate :: ToolChain -> C.Arch -> FilePath -> FilePath -> Action ()
-translate toolChain arch input output = do
-  let archString =
+translate tc arch input output = do
+  let archName =
         case arch of
           X86 I686   -> "i686"
           X86 X86_64 -> "x86-64"
           Arm Armv7  -> "armv7"
           _ -> error $ "Unsupported architecture: " ++ show arch
   need [input]
-  command_ [] (toolFromString toolChain "finalize")
-              ["-arch", archString, "-o", output, input]
+  command_ [] (toolFromString tc "finalize")
+              ["-arch", archName, "-o", output, input]
 
 -- | Link against the Pepper C API library.
 libppapi :: BuildFlags -> BuildFlags
@@ -150,12 +149,13 @@ mk_nmf inputs output = do
       , "      }"
       ]
     program (NaCl arch, input) =
-      let archString = case arch of
+      let archName = case arch of
                         X86 X86_64 -> "x86_64"
                         X86 _      -> "x86_32"
                         Arm _      -> "arm"
+                        _          -> error $ "mk_nmf: Unsupported architecture " ++ show arch
       in [
-           "    \"" ++ archString ++ "\": {"
+           "    \"" ++ archName ++ "\": {"
          , "      \"url\": \"" ++ makeRelative (takeDirectory output) input ++ "\""
          , "    }"
          ]
