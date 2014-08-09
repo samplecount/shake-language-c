@@ -19,7 +19,7 @@ module Shakefile.C.Windows (
 
 import Data.Label (get, set)
 import Data.Version (Version(..))
-import Development.Shake (need, command_)
+import Development.Shake
 import Shakefile.C
 import System.FilePath ((<.>))
 import qualified System.Info as System
@@ -62,7 +62,7 @@ toolChain LLVM =
   $ defaultToolChain
 toolChain Generic = toolChain GCC
 
-getDefaultToolChain :: IO (Target, ToolChain)
+getDefaultToolChain :: IO (Target, Action ToolChain)
 getDefaultToolChain = do
     target <- fmap target getHostArch
-    return (target, toolChain Generic)
+    return (target, return $ toolChain Generic)

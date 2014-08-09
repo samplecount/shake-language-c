@@ -30,7 +30,7 @@ module Shakefile.C.OSX (
   , universalBinary
 ) where
 
-import           Control.Applicative ((<$>))
+import           Control.Applicative
 import           Data.List (stripPrefix)
 import           Data.List.Split (splitOn)
 import           Data.Version (Version(..), showVersion)
@@ -95,12 +95,11 @@ getSystemVersion =
     <$> (map read . take 2 . splitOn ".")
     <$> readProcess "sw_vers" ["-productVersion"] ""
 
-getDefaultToolChain :: IO (Target, ToolChain)
+getDefaultToolChain :: IO (Target, Action ToolChain)
 getDefaultToolChain = do
     myVersion <- getSystemVersion
-    myDeveloperPath <- getDeveloperPath
     let defaultTarget = target (X86 X86_64) (macOSX myVersion)
-    return (defaultTarget, toolChain myDeveloperPath defaultTarget)
+    return (defaultTarget, toolChain <$> liftIO getDeveloperPath <*> pure defaultTarget)
 
 toolChain :: DeveloperPath -> Target -> ToolChain
 toolChain developer target =

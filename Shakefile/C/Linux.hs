@@ -61,7 +61,7 @@ toolChain LLVM =
   $ defaultToolChain
 toolChain Generic = toolChain GCC
 
-getDefaultToolChain :: IO (Target, ToolChain)
+getDefaultToolChain :: IO (Target, Action ToolChain)
 getDefaultToolChain = do
     target <- fmap target getHostArch
-    return (target, toolChain GCC)
+    return (target, return $ toolChain GCC)

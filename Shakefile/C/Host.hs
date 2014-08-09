@@ -20,14 +20,16 @@ module Shakefile.C.Host (
   , executableExtension
   , sharedLibraryExtension
   , loadableLibraryExtension
-  , getDefaultToolChain
+  , defaultToolChain
 ) where
 
+import           Development.Shake (Action)
 import           Shakefile.C (Target, ToolChain, notIf, onlyIf)
 import qualified Shakefile.C.Linux as Linux
 import qualified Shakefile.C.OSX as OSX
 import qualified Shakefile.C.Windows as Windows
 import qualified System.Info as System
+import           System.IO.Unsafe (unsafePerformIO)
 
 -- | Host operating system.
 data OS =
@@ -75,8 +77,10 @@ loadableLibraryExtension =
     Windows -> "dll"
 
 -- | Get host's default tool chain.
-getDefaultToolChain :: IO (Target, ToolChain)
-getDefaultToolChain =
+defaultToolChain :: (Target, Action ToolChain)
+{-# NOINLINE defaultToolChain #-}
+defaultToolChain = unsafePerformIO $ do
+  -- The assumption here is that target and toolchain don't change while the program is running.
   case os of
     Linux -> Linux.getDefaultToolChain
     OSX -> OSX.getDefaultToolChain
