@@ -144,9 +144,7 @@ iphoneos_version_min :: Version -> BuildFlags -> BuildFlags
 iphoneos_version_min version =
   append compilerFlags [(Nothing, ["-miphoneos-version-min=" ++ showVersion version])]
 
-universalBinary :: [FilePath] -> FilePath -> Rules FilePath
+universalBinary :: [FilePath] -> FilePath -> Action ()
 universalBinary inputs output = do
-  output *> \_ -> do
-    need inputs
-    command_ [] "lipo" $ ["-create", "-output", output] ++ inputs
-  return output
+  need inputs
+  command_ [] "lipo" $ ["-create", "-output", output] ++ inputs
