@@ -101,25 +101,24 @@ main = do
         mapM_ (\dir -> callProcess cabal ["sandbox", "add-source", dir])
               (configPackageDirs config)
       update = do
-        let handler :: String -> SomeException -> IO ()
-            handler msg _ = do
-              error $ msg ++ " failed, please call \"" ++ progName ++ " init\""
+        let handler :: (IO ()) -> SomeException -> IO ()
+            handler action _ = action
         hasSandbox' <- hasSandbox
         unless hasSandbox' initialize
         ncpu <- getNumProcessors
         let j = "-j" ++ show ncpu
-        handle (handler "Installation of package dependencies") $
-          callProcess cabal [
-              "install"
-              -- These might be defined in the user's cabal config file and effectively double compilation times
-            , "--disable-library-profiling"
-            , "--disable-executable-profiling"
-            , "--only-dependencies"
-            , "--force-reinstalls"
-            , j
-            ]
-        handle (handler "Updating build system") $
-          callProcess cabal ["build", j]
+        callProcess cabal [
+            "install"
+            -- These might be defined in the user's cabal config file and effectively double compilation times
+          , "--disable-library-profiling"
+          , "--disable-executable-profiling"
+          , "--only-dependencies"
+          , "--force-reinstalls"
+          , j
+          ]
+        let build = callProcess cabal ["build", j]
+        -- When the public interface of package dependencies changes, the local package needs to be reconfigured.
+        catch build (handler $ callProcess cabal ["configure"] >> build)
 
   case args of
     ("init":_) -> do
