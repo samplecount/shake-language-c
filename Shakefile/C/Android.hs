@@ -38,6 +38,7 @@ toolChainPrefix target =
     case get targetArch target of
         X86 _ -> "x86-"
         Arm _ -> "arm-linux-androideabi-"
+        arch  -> error $ "Unsupported Android target architecture " ++ archString arch
 
 osPrefix :: String
 osPrefix = System.os ++ "-" ++ cpu
@@ -138,6 +139,7 @@ abiString (Arm Armv5) = "armeabi"
 abiString (Arm Armv6) = "armeabi"
 abiString (Arm Armv7) = "armeabi-v7a"
 abiString (X86 _)     = "x86"
+abiString arch        = error $ "Unsupported Android target architecture " ++ archString arch
 
 native_app_glue :: Monad m => FilePath -> SourceTree m BuildFlags
 native_app_glue ndk = SourceTree.flags (append systemIncludes [ndk </> "sources/android/native_app_glue"])
