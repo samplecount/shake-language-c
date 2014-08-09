@@ -13,7 +13,7 @@
 -- limitations under the License.
 
 module Shakefile.C.Target (
-    TargetOS(..)
+    OS(..)
   , Platform(..)
   , Arch(..)
   , archString
@@ -26,7 +26,7 @@ module Shakefile.C.Target (
 import           Data.Char (toLower)
 import           Development.Shake.FilePath
 
-data TargetOS =
+data OS =
     Android
   | Linux
   | OSX
@@ -70,7 +70,7 @@ archString arch =
     LLVM_IR    -> "llvm_ir"
 
 data Target = Target {
-    targetOS :: TargetOS
+    targetOS :: OS
   , targetPlatform :: Platform
   , targetArch :: Arch
   } deriving (Show)

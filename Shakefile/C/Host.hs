@@ -23,18 +23,12 @@ module Shakefile.C.Host (
 
 import           Development.Shake (Action)
 import           Shakefile.C (Target, ToolChain)
+import           Shakefile.C.Target (OS(..))
 import qualified Shakefile.C.Linux as Linux
 import qualified Shakefile.C.OSX as OSX
 import qualified Shakefile.C.Windows as Windows
 import qualified System.Info as System
 import           System.IO.Unsafe (unsafePerformIO)
-
--- | Host operating system.
-data OS =
-    Linux
-  | OSX
-  | Windows
-  deriving (Eq, Show)
 
 -- | This host's operating system.
 os :: OS
@@ -43,7 +37,7 @@ os =
     "darwin"  -> OSX
     "mingw32" -> Windows
     "linux"   -> Linux
-    _ -> error $ "Unknown host operating system: " ++ System.os
+    _         -> error $ "Unknown host operating system: " ++ System.os
 
 -- | File extension for executables.
 executableExtension :: String
@@ -56,17 +50,17 @@ executableExtension =
 sharedLibraryExtension :: String
 sharedLibraryExtension =
   case os of
-    Linux   -> "so"
     OSX     -> "dylib"
     Windows -> "dll"
+    _       -> "so"
 
 -- | File extension for dynamic loadable libraries.
 loadableLibraryExtension :: String
 loadableLibraryExtension =
   case os of
-    Linux   -> "so"
     OSX     -> "bundle"
     Windows -> "dll"
+    _       -> "so"
 
 -- | Get host's default tool chain.
 defaultToolChain :: (Target, Action ToolChain)
@@ -77,4 +71,4 @@ defaultToolChain = unsafePerformIO $ do
     Linux -> Linux.getDefaultToolChain
     OSX -> OSX.getDefaultToolChain
     Windows -> Windows.getDefaultToolChain
-    -- _ -> error $ "No default toolchain for this operating system (" ++ show os ++ ")"
+    _ -> error $ "No default toolchain for this operating system (" ++ show os ++ ")"
