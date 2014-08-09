@@ -38,24 +38,14 @@ import           Shakefile.C.Host (OS(..))
 import qualified Shakefile.C.Host as Host
 import           Shakefile.Label (append, get, set)
 
-pepper :: Int -> Platform
-pepper apiVersion = Platform "pepper" (Version [apiVersion] [])
+pepper :: Int -> Version
+pepper apiVersion = Version [apiVersion] []
 
-canary :: Platform
-canary = Platform "pepper" (Version [] ["canary"])
+canary :: Version
+canary = Version [] ["canary"]
 
-target :: Platform -> Target
-target = mkTarget Pepper LLVM_IR
-
-platformPrefix :: Target -> FilePath
-platformPrefix target =
-  platformName platform
-  ++ "_"
-  ++ case versionTags version of
-      ["canary"] -> "canary"
-      _          -> show $ head (versionBranch version)
-  where platform = get targetPlatform target
-        version = platformVersion platform
+target :: Target
+target = mkTarget Pepper (Platform "pepper") LLVM_IR
 
 hostString :: String
 hostString =
@@ -66,8 +56,8 @@ hostString =
 
 data Config = Debug | Release deriving (Eq, Show)
 
-toolChain :: FilePath -> Config -> Target -> ToolChain
-toolChain sdk config target =
+toolChain :: FilePath -> Version -> Config -> Target -> ToolChain
+toolChain sdk sdkVersion config target =
     set variant LLVM
   $ set toolDirectory (Just (platformDir </> "toolchain" </> hostString ++ "_" ++ "pnacl" </> "bin"))
   $ set toolPrefix "pnacl-"
@@ -89,8 +79,15 @@ toolChain sdk config target =
       . append systemIncludes [includeDir </> "pnacl"]
       . append libraryPath [platformDir </> "lib" </> "pnacl" </> show config] )
   $ defaultToolChain
-  where platformDir = sdk </> platformPrefix target
-        includeDir = platformDir </> "include"
+  where
+    platformDir =
+          sdk
+      </> platformName (get targetPlatform target)
+          ++ "_"
+          ++ case versionTags sdkVersion of
+              ["canary"] -> "canary"
+              _          -> show $ head (versionBranch sdkVersion)
+    includeDir = platformDir </> "include"
 
 -- | Finalize a bit code executable.
 finalize :: ToolChain -> FilePath -> FilePath -> Action ()

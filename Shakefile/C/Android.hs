@@ -13,8 +13,8 @@
 -- limitations under the License.
 
 module Shakefile.C.Android (
-    platform
-  , target
+    target
+  , apiVersion
   , toolChain
   , abiString
   , gnustl
@@ -22,6 +22,7 @@ module Shakefile.C.Android (
   , native_app_glue
 ) where
 
+import           Control.Arrow
 import           Development.Shake.FilePath
 import           Data.Version (Version(..), showVersion)
 import           Shakefile.C
@@ -30,9 +31,6 @@ import qualified System.Info as System
 
 unsupportedArch :: Arch -> a
 unsupportedArch arch = error $ "Unsupported Android target architecture " ++ archString arch
-
-platform :: Int -> Platform
-platform apiVersion = Platform "android" (Version [apiVersion] [])
 
 toolChainPrefix :: Target -> String
 toolChainPrefix target =
@@ -47,15 +45,53 @@ osPrefix = System.os ++ "-" ++ cpu
                     "i386" -> "x86"
                     arch   -> arch
 
-target :: Arch -> Platform -> Target
-target = mkTarget Android
+target :: Arch -> Target
+target = mkTarget Android (Platform "android")
 
-toolChain :: FilePath -> (ToolChainVariant, Version) -> Target -> ToolChain
-toolChain "" (_, _) _ = error "Empty NDK directory"
-toolChain ndk (GCC, version) target =
+mkDefaultBuildFlags :: FilePath -> Version -> Arch -> BuildFlags -> BuildFlags
+mkDefaultBuildFlags ndk version arch =
+      append compilerFlags [(Nothing, [sysroot, march])]
+  >>> append compilerFlags (archCompilerFlags arch)
+  >>> append compilerFlags [(Nothing, [
+        "-fpic"
+      , "-ffunction-sections"
+      , "-funwind-tables"
+      , "-fstack-protector"
+      , "-no-canonical-prefixes"])]
+  >>> append linkerFlags [sysroot, march]
+  >>> append linkerFlags (archLinkerFlags arch)
+  >>> append linkerFlags ["-Wl,--no-undefined", "-Wl,-z,relro", "-Wl,-z,now"]
+  >>> append linkerFlags ["-no-canonical-prefixes"]
+  >>> append archiverFlags ["crs"]
+  where
+    sysroot =    "--sysroot="
+              ++ ndk
+              </> "platforms"
+              </> "android-" ++ show (head (versionBranch version))
+              </> "arch-" ++ case arch of
+                              (X86 _) -> "x86"
+                              (Arm _) -> "arm"
+                              arch    -> unsupportedArch arch
+    march = "-march=" ++ case arch of
+                          (Arm Armv5) -> "armv5te"
+                          (Arm Armv6) -> "armv5te"
+                          (Arm Armv7) -> "armv7-a"
+                          _           -> archString arch
+    archCompilerFlags (Arm Armv7) = [(Nothing, ["-mfloat-abi=softfp", "-mfpu=neon" {- vfpv3-d16 -}])]
+    archCompilerFlags (Arm _)     = [(Nothing, ["-mtune=xscale", "-msoft-float"])]
+    archCompilerFlags _           = []
+    archLinkerFlags (Arm Armv7)   = ["-Wl,--fix-cortex-a8"]
+    archLinkerFlags _             = []
+
+apiVersion :: Int -> Version
+apiVersion n = Version [n] []
+
+toolChain :: FilePath -> Version -> (ToolChainVariant, Version) -> Target -> ToolChain
+toolChain "" _ (_, _) _ = error "Empty NDK directory"
+toolChain ndk apiVersion (GCC, toolChainVersion) target =
     set variant GCC
   $ set toolDirectory (Just (ndk </> "toolchains"
-                                 </> toolChainPrefix target ++ showVersion version
+                                 </> toolChainPrefix target ++ showVersion toolChainVersion
                                  </> "prebuilt"
                                  </> osPrefix
                                  </> "bin"))
@@ -63,19 +99,19 @@ toolChain ndk (GCC, version) target =
   $ set compilerCommand "gcc"
   $ set archiverCommand "ar"
   $ set linkerCommand "g++"
-  $ set defaultBuildFlags (mkDefaultBuildFlags ndk target)
+  $ set defaultBuildFlags (mkDefaultBuildFlags ndk apiVersion (get targetArch target))
   $ defaultToolChain
-toolChain ndk (LLVM, version) target =
+toolChain ndk apiVersion (LLVM, toolChainVersion) target =
     set variant LLVM
   $ set toolDirectory (Just (ndk </> "toolchains"
-                                 </> "llvm-" ++ showVersion version
+                                 </> "llvm-" ++ showVersion toolChainVersion
                                  </> "prebuilt"
                                  </> osPrefix
                                  </> "bin"))
   $ set compilerCommand "clang"
   $ set archiverCommand "llvm-ar"
   $ set linkerCommand "clang++"
-  $ set defaultBuildFlags (  mkDefaultBuildFlags ndk target
+  $ set defaultBuildFlags (  mkDefaultBuildFlags ndk apiVersion (get targetArch target)
                            . append compilerFlags [(Nothing, ["-target", llvmTarget target]),
                                                    (Nothing, ["-gcc-toolchain", ndk </> "toolchains/arm-linux-androideabi-4.8/prebuilt" </> osPrefix])
                                                   ])
@@ -87,57 +123,10 @@ toolChain ndk (LLVM, version) target =
         Arm Armv7 -> "armv7-none-linux-androideabi"
         X86 I386 -> "i686-none-linux-android"
         arch -> unsupportedArch arch
-
-toolChain _ (variant, version) _ =
+toolChain _ _ (variant, version) _ =
   error $ "Unknown tool chain variant "
         ++ show variant ++ " "
         ++ showVersion version
-
-androidPlatformPrefix :: Target -> FilePath
-androidPlatformPrefix target =
-    platformName (get targetPlatform target)
-     ++ "-"
-     ++ show (head (versionBranch (platformVersion (get targetPlatform target))))
-    </> "arch-" ++ archShortString (get targetArch target)
-    where
-      archShortString (X86 _) = "x86"
-      archShortString (Arm _) = "arm"
-      archShortString arch    = unsupportedArch arch
-
-androidArchString :: Arch -> String
-androidArchString (Arm Armv5) = "armv5te"
-androidArchString (Arm Armv6) = "armv5te"
-androidArchString (Arm Armv7) = "armv7-a"
-androidArchString arch = archString arch
-
-archCompilerFlags :: Arch -> [(Maybe Language, [String])]
-archCompilerFlags (Arm Armv7) = [(Nothing, ["-mfloat-abi=softfp", "-mfpu=neon" {- vfpv3-d16 -}])]
-archCompilerFlags (Arm _)     = [(Nothing, ["-mtune=xscale", "-msoft-float"])]
-archCompilerFlags _           = []
-
-archLinkerFlags :: Arch -> [String]
-archLinkerFlags arch =
-    case arch of
-        Arm Armv7 -> common ++ ["-Wl,--fix-cortex-a8"]
-        _         -> common
-    where common = ["-Wl,--no-undefined", "-Wl,-z,relro", "-Wl,-z,now"]
-
-mkDefaultBuildFlags :: FilePath -> Target -> BuildFlags -> BuildFlags
-mkDefaultBuildFlags ndk target =
-    append compilerFlags ([(Nothing, [sysroot, march])] ++ archCompilerFlags arch)
-  . append compilerFlags ([(Nothing, [
-      "-fpic"
-    , "-ffunction-sections"
-    , "-funwind-tables"
-    , "-fstack-protector"
-    , "-no-canonical-prefixes"])])
-  . append linkerFlags ([sysroot, march] ++ archLinkerFlags arch)
-  . append linkerFlags ["-no-canonical-prefixes"]
-  . append archiverFlags ["crs"]
-  where
-    arch = get targetArch target
-    sysroot = "--sysroot=" ++ ndk </> "platforms" </> androidPlatformPrefix target
-    march = "-march=" ++ androidArchString arch
 
 abiString :: Arch -> String
 abiString (Arm Armv5) = "armeabi"

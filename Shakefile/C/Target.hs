@@ -44,7 +44,6 @@ data TargetOS =
 
 data Platform = Platform {
     platformName :: String
-  , platformVersion :: Version
   } deriving (Eq, Show)
 
 data X86Version =
@@ -80,13 +79,13 @@ archString arch =
 
 data Target = Target {
     _targetOS :: TargetOS
-  , _targetArch :: Arch
   , _targetPlatform :: Platform
+  , _targetArch :: Arch
   } deriving (Show)
 
 mkLabel ''Target
 
-mkTarget :: TargetOS -> Arch -> Platform -> Target
+mkTarget :: TargetOS -> Platform -> Arch -> Target
 mkTarget = Target
 
 class ToBuildPrefix a where

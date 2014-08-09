@@ -27,7 +27,7 @@ import System.Process (readProcess)
 
 getHostArch :: IO Arch
 getHostArch = do
-    -- arch <- fmap (head.lines) $ readProcess "arch" [] ""
+    -- TODO: Get the info from the environment
     let arch = System.arch
     return $ case arch of
         "i386" -> X86 I386
@@ -36,7 +36,7 @@ getHostArch = do
         _ -> error $ "Unknown host architecture " ++ arch
 
 target :: Arch -> Target
-target arch = mkTarget Windows arch (Platform "Windows" (Version [0] []))
+target = mkTarget Windows (Platform "windows")
 
 toolChain :: ToolChainVariant -> ToolChain
 toolChain GCC =
