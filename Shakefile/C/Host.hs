@@ -15,8 +15,6 @@
 module Shakefile.C.Host (
     OS(..)
   , os
-  , onlyOn
-  , notOn
   , executableExtension
   , sharedLibraryExtension
   , loadableLibraryExtension
@@ -24,7 +22,7 @@ module Shakefile.C.Host (
 ) where
 
 import           Development.Shake (Action)
-import           Shakefile.C (Target, ToolChain, notIf, onlyIf)
+import           Shakefile.C (Target, ToolChain)
 import qualified Shakefile.C.Linux as Linux
 import qualified Shakefile.C.OSX as OSX
 import qualified Shakefile.C.Windows as Windows
@@ -46,12 +44,6 @@ os =
     "mingw32" -> Windows
     "linux"   -> Linux
     _ -> error $ "Unknown host operating system: " ++ System.os
-
-onlyOn :: [OS] -> (a -> a) -> (a -> a)
-onlyOn which = onlyIf (os `elem` which)
-
-notOn :: [OS] -> (a -> a) -> (a -> a)
-notOn which = notIf (os `elem` which)
 
 -- | File extension for executables.
 executableExtension :: String

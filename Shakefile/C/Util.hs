@@ -13,27 +13,15 @@
 -- limitations under the License.
 
 module Shakefile.C.Util (
-    under
-  , mapFlag
+    mapFlag
   , concatMapFlag
   , (?=>)
-  , onlyIf
-  , notIf
   , words'
 ) where
 
 import Data.List
 import Development.Shake
 import Development.Shake.FilePath
-
-{-import Debug.Trace-}
-
-under :: FilePath -> [FilePath] -> [FilePath]
-under dir = map prependDir
-    where prependDir ""   = dir
-          prependDir "."  = dir
-          prependDir ".." = takeDirectory dir
-          prependDir x    = combine dir x
 
 mapFlag :: String -> [String] -> [String]
 mapFlag f = concatMap (\x -> [f, x])
@@ -44,13 +32,6 @@ concatMapFlag f = map (f++)
 -- Shake utils
 (?=>) :: FilePath -> (FilePath -> Action ()) -> Rules ()
 f ?=> a = (equalFilePath f) ?> a
-
--- Function utils
-onlyIf :: Bool -> (a -> a) -> (a -> a)
-onlyIf b f = if b then f else id
-
-notIf :: Bool -> (a -> a) -> (a -> a)
-notIf b f = if b then id else f
 
 -- | Splits a list of space separated strings.
 --
