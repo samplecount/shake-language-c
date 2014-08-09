@@ -85,4 +85,4 @@ defaultToolChain = unsafePerformIO $ do
     Linux -> Linux.getDefaultToolChain
     OSX -> OSX.getDefaultToolChain
     Windows -> Windows.getDefaultToolChain
-    _ -> error $ "No default toolchain for this operating system (" ++ show os ++ ")"
+    -- _ -> error $ "No default toolchain for this operating system (" ++ show os ++ ")"
