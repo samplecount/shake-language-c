@@ -29,7 +29,6 @@ module Shakefile.C.ToolChain (
   , targetVendor
   , targetOS
   , targetPlatform
-  , targetString
   , isTargetOS
   , Linkage(..)
   , LinkResult(..)
@@ -129,12 +128,6 @@ mkLabel ''Target
 
 mkTarget :: Arch -> String -> String -> Platform -> Target
 mkTarget = Target
-
-targetString :: Target -> String
-targetString target =
-     archShortString (get targetArch target)
-  ++ "-" ++ get targetVendor target
-  ++ "-" ++ get targetOS target
 
 isTargetOS :: Maybe String -> Maybe String -> Target -> Bool
 isTargetOS vendor os target =
