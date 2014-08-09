@@ -15,23 +15,16 @@
 module Shakefile.C.Util (
     mapFlag
   , concatMapFlag
-  , (?=>)
   , words'
 ) where
 
 import Data.List
-import Development.Shake
-import Development.Shake.FilePath
 
 mapFlag :: String -> [String] -> [String]
 mapFlag f = concatMap (\x -> [f, x])
 
 concatMapFlag :: String -> [String] -> [String]
 concatMapFlag f = map (f++)
-
--- Shake utils
-(?=>) :: FilePath -> (FilePath -> Action ()) -> Rules ()
-f ?=> a = (equalFilePath f) ?> a
 
 -- | Splits a list of space separated strings.
 --

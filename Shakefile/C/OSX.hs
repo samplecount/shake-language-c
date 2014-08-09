@@ -28,7 +28,7 @@ module Shakefile.C.OSX (
   , universalBinary
 ) where
 
-import           Control.Applicative
+import           Control.Applicative hiding ((*>))
 import           Data.List (stripPrefix)
 import           Data.List.Split (splitOn)
 import           Data.Version (Version(..), showVersion)
@@ -146,7 +146,7 @@ iphoneos_version_min version =
 
 universalBinary :: [FilePath] -> FilePath -> Rules FilePath
 universalBinary inputs output = do
-    output ?=> \_ -> do
-        need inputs
-        command_ [] "lipo" $ ["-create", "-output", output] ++ inputs
-    return output
+  output *> \_ -> do
+    need inputs
+    command_ [] "lipo" $ ["-create", "-output", output] ++ inputs
+  return output
