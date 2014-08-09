@@ -49,7 +49,6 @@ module Shakefile.C.ToolChain (
   , defaultLinker
   , toolFromString
   , tool
-  , toolChainFromEnvironment
   , applyEnv
   , ToBuildPrefix(..)
 ) where
@@ -216,9 +215,6 @@ toolFromString toolChain name =
 -- | Get the full path of a predefined tool.
 tool :: ToolChain -> (ToolChain :-> String) -> FilePath
 tool toolChain getter = toolFromString toolChain (get getter toolChain)
-
-toolChainFromEnvironment :: Monad m => m (ToolChain -> ToolChain)
-toolChainFromEnvironment = return id
 
 applyEnv :: ToolChain -> Action ToolChain
 applyEnv toolChain = do
