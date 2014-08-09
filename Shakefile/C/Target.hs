@@ -12,8 +12,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Shakefile.C.Target (
     TargetOS(..)
   , Platform(..)
@@ -21,18 +19,12 @@ module Shakefile.C.Target (
   , archString
   , ArmVersion(..)
   , X86Version(..)
-  , Target
-  , mkTarget
-  , targetArch
-  , targetOS
-  , targetPlatform
+  , Target(..)
   , ToBuildPrefix(..)
 ) where
 
 import           Data.Char (toLower)
 import           Development.Shake.FilePath
-import           Data.Version
-import           Shakefile.Label (get, mkLabel)
 
 data TargetOS =
     Android
@@ -78,15 +70,10 @@ archString arch =
     LLVM_IR -> "llvm_ir"
 
 data Target = Target {
-    _targetOS :: TargetOS
-  , _targetPlatform :: Platform
-  , _targetArch :: Arch
+    targetOS :: TargetOS
+  , targetPlatform :: Platform
+  , targetArch :: Arch
   } deriving (Show)
-
-mkLabel ''Target
-
-mkTarget :: TargetOS -> Platform -> Arch -> Target
-mkTarget = Target
 
 class ToBuildPrefix a where
   toBuildPrefix :: a -> FilePath
@@ -96,5 +83,5 @@ instance ToBuildPrefix Platform where
 
 instance ToBuildPrefix Target where
    toBuildPrefix target =
-          toBuildPrefix (get targetPlatform target)
-      </> (archString $ get targetArch target)
+          toBuildPrefix (targetPlatform target)
+      </> archString (targetArch target)

@@ -40,7 +40,7 @@ import qualified System.Directory as Dir
 import           System.Process (readProcess)
 
 archFlags :: Target -> [String]
-archFlags target = ["-arch", archString (get targetArch target)]
+archFlags target = ["-arch", archString (targetArch target)]
 
 newtype DeveloperPath = DeveloperPath { developerPath :: FilePath } deriving (Show)
 
@@ -68,7 +68,7 @@ iPhoneSimulator :: Platform
 iPhoneSimulator = Platform "iPhoneSimulator"
 
 target :: Platform -> Arch -> Target
-target = mkTarget OSX
+target = Target OSX
 
 platformSDKPath :: DeveloperPath -> Platform -> Version -> FilePath
 platformSDKPath developer platform sdkVersion =
@@ -132,7 +132,7 @@ toolChain developer sdkVersion target =
                           . append compilerFlags [(Nothing, archFlags target)]
                           . append linkerFlags (archFlags target ++ [ "-isysroot", sysRoot ]) )
   $ defaultToolChain
-  where sysRoot = platformSDKPath developer (get targetPlatform target) sdkVersion
+  where sysRoot = platformSDKPath developer (targetPlatform target) sdkVersion
 
 macosx_version_min :: Version -> BuildFlags -> BuildFlags
 macosx_version_min version =

@@ -34,7 +34,7 @@ unsupportedArch arch = error $ "Unsupported Android target architecture " ++ arc
 
 toolChainPrefix :: Target -> String
 toolChainPrefix target =
-    case get targetArch target of
+    case targetArch target of
         X86 _ -> "x86-"
         Arm _ -> "arm-linux-androideabi-"
         arch  -> unsupportedArch arch
@@ -46,7 +46,7 @@ osPrefix = System.os ++ "-" ++ cpu
                     arch   -> arch
 
 target :: Arch -> Target
-target = mkTarget Android (Platform "android")
+target = Target Android (Platform "android")
 
 mkDefaultBuildFlags :: FilePath -> Version -> Arch -> BuildFlags -> BuildFlags
 mkDefaultBuildFlags ndk version arch =
@@ -99,7 +99,7 @@ toolChain ndk apiVersion (GCC, toolChainVersion) target =
   $ set compilerCommand "gcc"
   $ set archiverCommand "ar"
   $ set linkerCommand "g++"
-  $ set defaultBuildFlags (mkDefaultBuildFlags ndk apiVersion (get targetArch target))
+  $ set defaultBuildFlags (mkDefaultBuildFlags ndk apiVersion (targetArch target))
   $ defaultToolChain
 toolChain ndk apiVersion (LLVM, toolChainVersion) target =
     set variant LLVM
@@ -111,14 +111,14 @@ toolChain ndk apiVersion (LLVM, toolChainVersion) target =
   $ set compilerCommand "clang"
   $ set archiverCommand "llvm-ar"
   $ set linkerCommand "clang++"
-  $ set defaultBuildFlags (  mkDefaultBuildFlags ndk apiVersion (get targetArch target)
+  $ set defaultBuildFlags (  mkDefaultBuildFlags ndk apiVersion (targetArch target)
                            . append compilerFlags [(Nothing, ["-target", llvmTarget target]),
                                                    (Nothing, ["-gcc-toolchain", ndk </> "toolchains/arm-linux-androideabi-4.8/prebuilt" </> osPrefix])
                                                   ])
   $ defaultToolChain
   where
     llvmTarget target =
-      case get targetArch target of
+      case targetArch target of
         Arm Armv5 -> "armv5te-none-linux-androideabi"
         Arm Armv7 -> "armv7-none-linux-androideabi"
         X86 I386 -> "i686-none-linux-android"
@@ -146,7 +146,7 @@ gnustl version linkage ndk target =
   . append libraryPath [stlPath </> "libs" </> abi]
   . append libraries [lib]
     where stlPath = ndk </> "sources/cxx-stl/gnu-libstdc++" </> showVersion version
-          abi = abiString (get targetArch target)
+          abi = abiString (targetArch target)
           lib = case linkage of
                   Static -> "gnustl_static"
                   Shared -> "gnustl_shared"
@@ -163,7 +163,7 @@ libcxx linkage ndk target =
   . append linkerFlags flags
     where stlPath = ndk </> "sources" </> "cxx-stl"
           libcxxPath = stlPath </> "llvm-libc++"
-          abi = abiString (get targetArch target)
+          abi = abiString (targetArch target)
           lib = case linkage of
                   Static -> "libc++_static"
                   Shared -> "libc++_shared"

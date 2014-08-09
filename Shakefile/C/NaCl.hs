@@ -45,7 +45,7 @@ canary :: Version
 canary = Version [] ["canary"]
 
 target :: Target
-target = mkTarget Pepper (Platform "pepper") LLVM_IR
+target = Target Pepper (Platform "pepper") LLVM_IR
 
 hostString :: String
 hostString =
@@ -82,7 +82,7 @@ toolChain sdk sdkVersion config target =
   where
     platformDir =
           sdk
-      </> platformName (get targetPlatform target)
+      </> platformName (targetPlatform target)
           ++ "_"
           ++ case versionTags sdkVersion of
               ["canary"] -> "canary"
