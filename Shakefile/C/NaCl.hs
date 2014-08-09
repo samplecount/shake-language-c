@@ -45,7 +45,7 @@ canary :: Platform
 canary = Platform "pepper" (Version [] ["canary"])
 
 target :: Platform -> Target
-target = mkTarget LLVM_IR "google" "native-client"
+target = mkTarget LLVM_IR "pepper"
 
 platformPrefix :: Target -> FilePath
 platformPrefix target =

@@ -33,7 +33,7 @@ getHostArch = do
         _ -> error $ "Unknown host architecture " ++ arch
 
 target :: Arch -> Target
-target arch = mkTarget arch "gnu" "linux" (Platform "Linux" (Version [0] []))
+target arch = mkTarget arch "linux" (Platform "Linux" (Version [0] []))
 
 platformArchiver :: Archiver
 platformArchiver toolChain buildFlags inputs output = do

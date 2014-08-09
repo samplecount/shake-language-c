@@ -26,7 +26,6 @@ module Shakefile.C.ToolChain (
   , Target
   , mkTarget
   , targetArch
-  , targetVendor
   , targetOS
   , targetPlatform
   , isTargetOS
@@ -119,20 +118,17 @@ archString arch =
 
 data Target = Target {
     _targetArch :: Arch
-  , _targetVendor :: String
   , _targetOS :: String
   , _targetPlatform :: Platform
   } deriving (Show)
 
 mkLabel ''Target
 
-mkTarget :: Arch -> String -> String -> Platform -> Target
+mkTarget :: Arch -> String -> Platform -> Target
 mkTarget = Target
 
-isTargetOS :: Maybe String -> Maybe String -> Target -> Bool
-isTargetOS vendor os target =
-    maybe True (_targetVendor target ==) vendor
- && maybe True (_targetOS target ==) os
+isTargetOS :: Maybe String -> Target -> Bool
+isTargetOS os target = maybe True (_targetOS target ==) os
 
 data Linkage = Static | Shared deriving (Enum, Eq, Show)
 
