@@ -54,6 +54,7 @@ module Shakefile.C.ToolChain (
   , toolFromString
   , tool
   , toolChainFromEnvironment
+  , applyEnv
   , ToBuildPrefix(..)
 ) where
 
@@ -242,12 +243,13 @@ tool toolChain getter = toolFromString toolChain (get getter toolChain)
 toolChainFromEnvironment :: Monad m => m (ToolChain -> ToolChain)
 toolChainFromEnvironment = return id
 
-toolChainFromEnvironment' :: Action (ToolChain -> ToolChain)
-toolChainFromEnvironment' = do
+applyEnv :: ToolChain -> Action ToolChain
+applyEnv toolChain = do
   compiler <- getEnv "CC"
   vendor <- getEnv "STIR_TOOLCHAIN_VENDOR"
   return $ maybe id (set compilerCommand) compiler
          . maybe id (set variant) ((vendor >>= parseVendor) <|> (compiler >>= vendorFromCommand))
+         $ toolChain
   where
     parseVendor s =
       case map toLower s of
