@@ -48,7 +48,7 @@ osPrefix = System.os ++ "-" ++ cpu
                     arch   -> arch
 
 target :: Arch -> Platform -> Target
-target arch = mkTarget arch "androideabi"
+target = mkTarget Android
 
 toolChain :: FilePath -> (ToolChainVariant, Version) -> Target -> ToolChain
 toolChain "" (_, _) _ = error "Empty NDK directory"

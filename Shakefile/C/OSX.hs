@@ -66,7 +66,7 @@ iPhoneSimulator :: Version -> Platform
 iPhoneSimulator = Platform "iPhoneSimulator"
 
 target :: Arch -> Platform -> Target
-target arch = mkTarget arch "darwin"
+target = mkTarget OSX
 
 platformSDKPath :: DeveloperPath -> Platform -> FilePath
 platformSDKPath developer platform =

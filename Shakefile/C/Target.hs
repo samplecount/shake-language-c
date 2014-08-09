@@ -15,7 +15,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Shakefile.C.Target (
-    Platform(..)
+    TargetOS(..)
+  , Platform(..)
   , Arch(..)
   , archString
   , ArmVersion(..)
@@ -25,7 +26,6 @@ module Shakefile.C.Target (
   , targetArch
   , targetOS
   , targetPlatform
-  , isTargetOS
   , ToBuildPrefix(..)
 ) where
 
@@ -33,6 +33,14 @@ import           Data.Char (toLower)
 import           Development.Shake.FilePath
 import           Data.Version
 import           Shakefile.Label (get, mkLabel)
+
+data TargetOS =
+    Android
+  | Linux
+  | OSX
+  | Pepper
+  | Windows
+  deriving (Eq, Ord, Show)
 
 data Platform = Platform {
     platformName :: String
@@ -71,18 +79,15 @@ archString arch =
     LLVM_IR -> "llvm_ir"
 
 data Target = Target {
-    _targetArch :: Arch
-  , _targetOS :: String
+    _targetOS :: TargetOS
+  , _targetArch :: Arch
   , _targetPlatform :: Platform
   } deriving (Show)
 
 mkLabel ''Target
 
-mkTarget :: Arch -> String -> Platform -> Target
+mkTarget :: TargetOS -> Arch -> Platform -> Target
 mkTarget = Target
-
-isTargetOS :: Maybe String -> Target -> Bool
-isTargetOS os target = maybe True (_targetOS target ==) os
 
 class ToBuildPrefix a where
   toBuildPrefix :: a -> FilePath

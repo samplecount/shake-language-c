@@ -36,7 +36,7 @@ getHostArch = do
         _ -> error $ "Unknown host architecture " ++ arch
 
 target :: Arch -> Target
-target arch = mkTarget arch "windows" (Platform "Windows" (Version [0] []))
+target arch = mkTarget Windows arch (Platform "Windows" (Version [0] []))
 
 toolChain :: ToolChainVariant -> ToolChain
 toolChain GCC =

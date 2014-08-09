@@ -45,7 +45,7 @@ canary :: Platform
 canary = Platform "pepper" (Version [] ["canary"])
 
 target :: Platform -> Target
-target = mkTarget LLVM_IR "pepper"
+target = mkTarget Pepper LLVM_IR
 
 platformPrefix :: Target -> FilePath
 platformPrefix target =
@@ -60,9 +60,9 @@ platformPrefix target =
 hostString :: String
 hostString =
   case Host.os of
-    Linux   -> "linux"
-    OSX     -> "mac"
-    Windows -> "win"
+    Host.Linux   -> "linux"
+    Host.OSX     -> "mac"
+    Host.Windows -> "win"
 
 data Config = Debug | Release deriving (Eq, Show)
 

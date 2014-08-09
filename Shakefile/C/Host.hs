@@ -42,9 +42,9 @@ data OS =
 os :: OS
 os =
   case System.os of
-    "darwin" -> OSX
-    "mingw32"  -> Windows
-    "linux"  -> Linux
+    "darwin"  -> OSX
+    "mingw32" -> Windows
+    "linux"   -> Linux
     _ -> error $ "Unknown host operating system: " ++ System.os
 
 onlyOn :: [OS] -> (a -> a) -> (a -> a)
