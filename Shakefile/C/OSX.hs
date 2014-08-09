@@ -118,9 +118,9 @@ toolChain developer target =
   $ set linkerCommand "clang++"
   $ set linker (\linkResult toolChain ->
       case linkResult of
-        Executable     -> defaultLinker toolChain
-        SharedLibrary  -> defaultLinker toolChain . prepend linkerFlags ["-dynamiclib"]
-        DynamicLibrary -> defaultLinker toolChain . prepend linkerFlags ["-bundle"]
+        Executable      -> defaultLinker toolChain
+        SharedLibrary   -> defaultLinker toolChain . prepend linkerFlags ["-dynamiclib"]
+        LoadableLibrary -> defaultLinker toolChain . prepend linkerFlags ["-bundle"]
     )
   $ set defaultBuildFlags ( append preprocessorFlags [ "-isysroot", sysRoot ]
                           . append compilerFlags [(Nothing, archFlags target)]

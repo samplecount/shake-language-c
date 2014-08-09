@@ -145,7 +145,7 @@ data Linkage = Static | Shared deriving (Enum, Eq, Show)
 
 data LinkResult = Executable
                 | SharedLibrary
-                | DynamicLibrary -- FIXME: Rename to LoadableLibrary
+                | LoadableLibrary
                 deriving (Enum, Eq, Show)
 
 data ToolChainVariant =

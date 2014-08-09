@@ -16,7 +16,7 @@ module Shakefile.C.Rules (
     executable
   , staticLibrary
   , sharedLibrary
-  , dynamicLibrary
+  , loadableLibrary
 ) where
 
 import           Development.Shake
@@ -58,6 +58,7 @@ buildProduct getLinker getToolChain result getBuildFlags getSources = do
     toolChain <- cachedToolChain ()
     buildFlags <- cachedBuildFlags ()
     -- Compute source file name from object file name
+    -- Using getSources here would result in a dependency of every object file on the list of sources, leading to unnecessary rebuilds.
     let src = case splitExtension $ dropExtension $ makeRelative objectsDir obj of
                 (x, ".abs") -> "/" </> x -- Source file had absolute path
                 (x, ".rel") -> x
@@ -78,5 +79,5 @@ staticLibrary toolChain = buildProduct (get archiver) toolChain
 sharedLibrary :: Action ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
 sharedLibrary toolChain = buildProduct (flip (get linker) SharedLibrary) toolChain
 
-dynamicLibrary :: Action ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
-dynamicLibrary toolChain = buildProduct (flip (get linker) DynamicLibrary) toolChain
+loadableLibrary :: Action ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
+loadableLibrary toolChain = buildProduct (flip (get linker) LoadableLibrary) toolChain
