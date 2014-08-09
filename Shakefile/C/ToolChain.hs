@@ -79,7 +79,7 @@ data ToolChain = ToolChain {
   , _archiver :: Archiver
   , _linkerCommand :: FilePath
   , _linker :: LinkResult -> Linker
-  , _defaultBuildFlags :: BuildFlags -> BuildFlags
+  , _defaultBuildFlags :: Action (BuildFlags -> BuildFlags)
   }
 
 mkLabel ''ToolChain
@@ -139,7 +139,7 @@ defaultToolChain =
           case linkResult of
             Executable -> defaultLinker linkerCmd
             _          -> defaultLinker linkerCmd . append linkerFlags ["-shared"]
-      , _defaultBuildFlags = id
+      , _defaultBuildFlags = return id
       }
 
 toolFromString :: ToolChain -> String -> FilePath

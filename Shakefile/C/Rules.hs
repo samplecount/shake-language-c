@@ -42,30 +42,34 @@ buildProduct getLinker getToolChain result getBuildFlags getSources = do
     sources <- getSources
     return $ [ objectsDir </> makeRelative "/" (src <.> if isAbsolute src then "abs.o" else "rel.o")
              | src <- sources ]
-  cachedBuildFlags <- newCache $ \() -> getBuildFlags
   cachedToolChain <- newCache $ \() -> getToolChain
+  cachedBuildFlags <- newCache $ \() -> do
+    tc <- cachedToolChain ()
+    f <- get ToolChain.defaultBuildFlags tc
+    g <- getBuildFlags
+    return $ g . f
   result *> \_ -> do
-    toolChain <- cachedToolChain ()
-    buildFlags <- cachedBuildFlags ()
+    tc <- cachedToolChain ()
+    flags <- cachedBuildFlags ()
     objs <- cachedObjects ()
     need objs
-    (getLinker toolChain)
-      toolChain
-      (buildFlags . get ToolChain.defaultBuildFlags toolChain $ BuildFlags.defaultBuildFlags)
+    (getLinker tc)
+      tc
+      (flags BuildFlags.defaultBuildFlags)
       objs
       result
   (dropTrailingPathSeparator objectsDir ++ "//*.o") *> \obj -> do
-    toolChain <- cachedToolChain ()
-    buildFlags <- cachedBuildFlags ()
+    tc <- cachedToolChain ()
+    flags <- cachedBuildFlags ()
     -- Compute source file name from object file name
     -- Using getSources here would result in a dependency of every object file on the list of sources, leading to unnecessary rebuilds.
     let src = case splitExtension $ dropExtension $ makeRelative objectsDir obj of
                 (x, ".abs") -> "/" </> x -- Source file had absolute path
                 (x, ".rel") -> x
                 (_, ext)    -> error $ "BUG: Unexpected object file extension " ++ ext
-    (get compiler toolChain)
-      toolChain
-      (buildFlags . get ToolChain.defaultBuildFlags toolChain $ BuildFlags.defaultBuildFlags)
+    (get compiler tc)
+      tc
+      (flags BuildFlags.defaultBuildFlags)
       src
       obj
   return result

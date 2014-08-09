@@ -73,7 +73,8 @@ toolChain sdk sdkVersion config t =
     )
   $ set linkerCommand "clang++"
   $ set defaultBuildFlags
-      ( append systemIncludes [includeDir]
+      ( return $
+        append systemIncludes [includeDir]
       . append userIncludes [includeDir]
       . append systemIncludes [includeDir </> "pnacl"]
       . append libraryPath [platformDir </> "lib" </> "pnacl" </> show config] )

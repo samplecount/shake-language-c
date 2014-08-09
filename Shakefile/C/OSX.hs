@@ -128,9 +128,11 @@ toolChain developer version t =
         SharedLibrary   -> defaultLinker tc . prepend linkerFlags ["-dynamiclib"]
         LoadableLibrary -> defaultLinker tc . prepend linkerFlags ["-bundle"]
     )
-  $ set defaultBuildFlags ( append preprocessorFlags [ "-isysroot", sysRoot ]
-                          . append compilerFlags [(Nothing, archFlags t)]
-                          . append linkerFlags (archFlags t ++ [ "-isysroot", sysRoot ]) )
+  $ set defaultBuildFlags
+      ( return $
+        append preprocessorFlags [ "-isysroot", sysRoot ]
+      . append compilerFlags [(Nothing, archFlags t)]
+      . append linkerFlags (archFlags t ++ [ "-isysroot", sysRoot ]) )
   $ defaultToolChain
   where sysRoot = platformSDKPath developer (targetPlatform t) version
 

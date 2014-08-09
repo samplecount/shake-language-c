@@ -99,7 +99,7 @@ toolChain ndk version (GCC, tcVersion) t =
   $ set compilerCommand "gcc"
   $ set archiverCommand "ar"
   $ set linkerCommand "g++"
-  $ set defaultBuildFlags (mkDefaultBuildFlags ndk version (targetArch t))
+  $ set defaultBuildFlags (return $ mkDefaultBuildFlags ndk version (targetArch t))
   $ defaultToolChain
 toolChain ndk version (LLVM, tcVersion) t =
     set variant LLVM
@@ -111,7 +111,7 @@ toolChain ndk version (LLVM, tcVersion) t =
   $ set compilerCommand "clang"
   $ set archiverCommand "llvm-ar"
   $ set linkerCommand "clang++"
-  $ set defaultBuildFlags (
+  $ set defaultBuildFlags (return $
         mkDefaultBuildFlags ndk version (targetArch t)
       . append compilerFlags [
             (Nothing, ["-target", llvmTarget t])
