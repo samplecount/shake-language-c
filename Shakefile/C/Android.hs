@@ -25,8 +25,6 @@ module Shakefile.C.Android (
 import           Development.Shake.FilePath
 import           Data.Version (Version(..), showVersion)
 import           Shakefile.C
-import           Shakefile.SourceTree (SourceTree)
-import qualified Shakefile.SourceTree as SourceTree
 import           Shakefile.Label (get, set, append)
 import qualified System.Info as System
 
@@ -141,9 +139,10 @@ abiString (Arm Armv7) = "armeabi-v7a"
 abiString (X86 _)     = "x86"
 abiString arch        = error $ "Unsupported Android target architecture " ++ archString arch
 
-native_app_glue :: Monad m => FilePath -> SourceTree m BuildFlags
-native_app_glue ndk = SourceTree.flags (append systemIncludes [ndk </> "sources/android/native_app_glue"])
-                        (SourceTree.files [ndk </> "sources/android/native_app_glue/android_native_app_glue.c"])
+native_app_glue :: FilePath -> ([FilePath], BuildFlags -> BuildFlags)
+native_app_glue ndk =
+  ( [ndk </> "sources/android/native_app_glue/android_native_app_glue.c"]
+  , append systemIncludes [ndk </> "sources/android/native_app_glue"] )
 
 gnustl :: Version -> Linkage -> FilePath -> Target -> BuildFlags -> BuildFlags
 gnustl version linkage ndk target =
