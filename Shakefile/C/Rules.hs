@@ -30,29 +30,32 @@ mkObjectsDir path = takeDirectory path </> map tr (takeFileName path) ++ "_obj"
     where tr '.' = '_'
           tr x   = x
 
-buildProduct :: Linker
-             -> ToolChain
+buildProduct :: (ToolChain -> Linker)
+             -> Action ToolChain
              -> FilePath
              -> Action (BuildFlags -> BuildFlags)
              -> Action [FilePath]
              -> Rules FilePath
-buildProduct link toolChain result getBuildFlags getSources = do
+buildProduct getLinker getToolChain result getBuildFlags getSources = do
   let objectsDir = mkObjectsDir result
   cachedObjects <- newCache $ \() -> do
     sources <- getSources
     return $ [ objectsDir </> makeRelative "/" (src <.> if isAbsolute src then "abs.o" else "rel.o")
              | src <- sources ]
   cachedBuildFlags <- newCache $ \() -> getBuildFlags
+  cachedToolChain <- newCache $ \() -> getToolChain
   result *> \_ -> do
+    toolChain <- cachedToolChain ()
     buildFlags <- cachedBuildFlags ()
     objs <- cachedObjects ()
     need objs
-    link
+    (getLinker toolChain)
       toolChain
       (buildFlags . get ToolChain.defaultBuildFlags toolChain $ BuildFlags.defaultBuildFlags)
       objs
       result
   (dropTrailingPathSeparator objectsDir ++ "//*.o") *> \obj -> do
+    toolChain <- cachedToolChain ()
     buildFlags <- cachedBuildFlags ()
     -- Compute source file name from object file name
     let src = case splitExtension $ dropExtension $ makeRelative objectsDir obj of
@@ -66,14 +69,14 @@ buildProduct link toolChain result getBuildFlags getSources = do
       obj
   return result
 
-executable :: ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
-executable toolChain = buildProduct (get linker toolChain Executable) toolChain
+executable :: Action ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
+executable toolChain = buildProduct (flip (get linker) Executable) toolChain
 
-staticLibrary :: ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
-staticLibrary toolChain = buildProduct (get archiver toolChain) toolChain
+staticLibrary :: Action ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
+staticLibrary toolChain = buildProduct (get archiver) toolChain
 
-sharedLibrary :: ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
-sharedLibrary toolChain = buildProduct (get linker toolChain SharedLibrary) toolChain
+sharedLibrary :: Action ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
+sharedLibrary toolChain = buildProduct (flip (get linker) SharedLibrary) toolChain
 
-dynamicLibrary :: ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
-dynamicLibrary toolChain = buildProduct (get linker toolChain DynamicLibrary) toolChain
+dynamicLibrary :: Action ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
+dynamicLibrary toolChain = buildProduct (flip (get linker) DynamicLibrary) toolChain
