@@ -118,8 +118,9 @@ main = do
           ]
         -- When the public interface of package dependencies changes, the local package needs to be reconfigured.
         (exitCode, out1, out2) <- readProcessWithExitCode cabal ["build", j] ""
-        hPutStr stdout out1
+        -- First output stderr
         hPutStr stderr out2
+        hPutStr stdout out1
         case exitCode of
           ExitSuccess -> return ()
           ExitFailure code -> do
