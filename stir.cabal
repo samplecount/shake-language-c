@@ -50,6 +50,8 @@ Library
     Shakefile.Configuration
     Shakefile.Label
     Shakefile.SourceTree
+  Other-Modules:
+    Shakefile.C.Target
   Ghc-Options: -Wall
   Build-Depends:
       base >= 4 && < 5

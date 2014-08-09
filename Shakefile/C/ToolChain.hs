@@ -16,18 +16,7 @@
 {-# LANGUAGE TypeOperators #-}
 
 module Shakefile.C.ToolChain (
-    Platform(..)
-  , Arch(..)
-  , archString
-  , ArmVersion(..)
-  , X86Version(..)
-  , Target
-  , mkTarget
-  , targetArch
-  , targetOS
-  , targetPlatform
-  , isTargetOS
-  , Linkage(..)
+    Linkage(..)
   , LinkResult(..)
   , ToolChain
   , ToolChainVariant(..)
@@ -50,72 +39,18 @@ module Shakefile.C.ToolChain (
   , toolFromString
   , tool
   , applyEnv
-  , ToBuildPrefix(..)
 ) where
 
 import           Control.Applicative
 import           Data.Char (toLower)
 import           Data.List (isInfixOf)
-import           Development.Shake hiding (command)
-import qualified Development.Shake as Shake
+import           Development.Shake
 import           Development.Shake.FilePath
 import           Development.Shake.Util (needMakefileDependencies)
-import           Data.Version
 import           Shakefile.Label ((:->), append, get, mkLabel, prepend, set)
 import           Shakefile.C.BuildFlags hiding (defaultBuildFlags)
 import           Shakefile.C.Language (languageOf)
 import           Shakefile.C.Util (concatMapFlag, mapFlag)
-import           System.Environment (getEnvironment)
-
-data Platform = Platform {
-    platformName :: String
-  , platformVersion :: Version
-  } deriving (Eq, Show)
-
-data X86Version =
-    I386
-  | I686
-  | X86_64
-  deriving (Eq, Show)
-
-data ArmVersion =
-    Armv5
-  | Armv6
-  | Armv7
-  | Armv7s
-  deriving (Eq, Show)
-
-data Arch =
-    X86 X86Version
-  | Arm ArmVersion
-  | LLVM_IR
-  deriving (Eq, Show)
-
-archString :: Arch -> String
-archString arch =
-  case arch of
-    X86 I386 -> "i386"
-    X86 I686 -> "i686"
-    X86 X86_64 -> "x86_64"
-    Arm Armv5 -> "armv5"
-    Arm Armv6 -> "armv6"
-    Arm Armv7 -> "armv7"
-    Arm Armv7s -> "armv7s"
-    LLVM_IR -> "llvm_ir"
-
-data Target = Target {
-    _targetArch :: Arch
-  , _targetOS :: String
-  , _targetPlatform :: Platform
-  } deriving (Show)
-
-mkLabel ''Target
-
-mkTarget :: Arch -> String -> Platform -> Target
-mkTarget = Target
-
-isTargetOS :: Maybe String -> Target -> Bool
-isTargetOS os target = maybe True (_targetOS target ==) os
 
 data Linkage = Static | Shared deriving (Enum, Eq, Show)
 
@@ -237,14 +172,3 @@ applyEnv toolChain = do
          else if "clang" `isInfixOf` cmd
          then Just LLVM
          else Just Generic
-
-class ToBuildPrefix a where
-  toBuildPrefix :: a -> FilePath
-
-instance ToBuildPrefix Platform where
-  toBuildPrefix = map toLower . platformName
-
-instance ToBuildPrefix Target where
-   toBuildPrefix target =
-          toBuildPrefix (get targetPlatform target)
-      </> (archString $ get targetArch target)

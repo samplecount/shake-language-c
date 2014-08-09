@@ -16,6 +16,7 @@ module Shakefile.C (
     module Shakefile.C.BuildFlags
   , module Shakefile.C.Language
   , module Shakefile.C.Rules
+  , module Shakefile.C.Target
   , module Shakefile.C.ToolChain
   , module Shakefile.C.Util
 ) where
@@ -23,5 +24,6 @@ module Shakefile.C (
 import Shakefile.C.BuildFlags hiding (defaultBuildFlags)
 import Shakefile.C.Language
 import Shakefile.C.Rules
+import Shakefile.C.Target
 import Shakefile.C.ToolChain
 import Shakefile.C.Util
