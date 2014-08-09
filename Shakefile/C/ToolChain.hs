@@ -18,7 +18,6 @@
 module Shakefile.C.ToolChain (
     Platform(..)
   , Arch(..)
-  , archShortString
   , archString
   , ArmVersion(..)
   , X86Version(..)
@@ -92,13 +91,6 @@ data Arch =
   | Arm ArmVersion
   | LLVM_IR
   deriving (Eq, Show)
-
-archShortString :: Arch -> String
-archShortString arch =
-  case arch of
-    X86 _ -> "x86"
-    Arm _ -> "arm"
-    LLVM_IR -> "llvm_ir"
 
 archString :: Arch -> String
 archString arch =

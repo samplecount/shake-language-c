@@ -28,6 +28,9 @@ import           Shakefile.C
 import           Shakefile.Label (get, set, append)
 import qualified System.Info as System
 
+unsupportedArch :: Arch -> a
+unsupportedArch arch = error $ "Unsupported Android target architecture " ++ archString arch
+
 platform :: Int -> Platform
 platform apiVersion = Platform "android" (Version [apiVersion] [])
 
@@ -36,7 +39,7 @@ toolChainPrefix target =
     case get targetArch target of
         X86 _ -> "x86-"
         Arm _ -> "arm-linux-androideabi-"
-        arch  -> error $ "Unsupported Android target architecture " ++ archString arch
+        arch  -> unsupportedArch arch
 
 osPrefix :: String
 osPrefix = System.os ++ "-" ++ cpu
@@ -83,7 +86,7 @@ toolChain ndk (LLVM, version) target =
         Arm Armv5 -> "armv5te-none-linux-androideabi"
         Arm Armv7 -> "armv7-none-linux-androideabi"
         X86 I386 -> "i686-none-linux-android"
-        _ -> error "Unsupported LLVM target architecture"
+        arch -> unsupportedArch arch
 
 toolChain _ (variant, version) _ =
   error $ "Unknown tool chain variant "
@@ -96,6 +99,10 @@ androidPlatformPrefix target =
      ++ "-"
      ++ show (head (versionBranch (platformVersion (get targetPlatform target))))
     </> "arch-" ++ archShortString (get targetArch target)
+    where
+      archShortString (X86 _) = "x86"
+      archShortString (Arm _) = "arm"
+      archShortString arch    = unsupportedArch arch
 
 androidArchString :: Arch -> String
 androidArchString (Arm Armv5) = "armv5te"
