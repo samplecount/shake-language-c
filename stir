@@ -14,7 +14,6 @@
 -- limitations under the License.
 
 import           Control.Applicative
-import           Control.Exception
 import           Control.Monad
 import           Data.Char (toLower)
 import qualified Data.List as List
@@ -26,14 +25,17 @@ import           GHC.Conc (getNumProcessors)
 import qualified System.Directory as Dir
 import qualified System.Environment as Env
 import           System.Exit (ExitCode(..), exitFailure)
-import           System.FilePath ((</>))
-import           System.IO (hPutStrLn, stderr)
-import           System.Process (rawSystem)
+import           System.FilePath
+import           System.IO (hPutStr, hPutStrLn, stderr, stdout)
+import           System.Process (readProcessWithExitCode, rawSystem)
 
 -- Cabal configuration fields:
 
 configFieldPackageDirs :: String
 configFieldPackageDirs = "x-stir-package-dirs"
+
+execError :: FilePath -> Int -> IO ()
+execError path code = error $ takeFileName path ++ " failed with exit code " ++ show code
 
 -- Not yet in process-1.1
 callProcess :: String -> [String] -> IO ()
@@ -42,7 +44,7 @@ callProcess path args = do
   exitCode <- rawSystem path args
   case exitCode of
     ExitSuccess -> return ()
-    ExitFailure code -> error $ path ++ " failed with exit code " ++ show code
+    ExitFailure code -> execError path code
 
 -- Ignore exit code
 callProcess_ :: String -> [String] -> IO ()
@@ -101,8 +103,6 @@ main = do
         mapM_ (\dir -> callProcess cabal ["sandbox", "add-source", dir])
               (configPackageDirs config)
       update = do
-        let handler :: (IO ()) -> SomeException -> IO ()
-            handler action _ = action
         hasSandbox' <- hasSandbox
         unless hasSandbox' initialize
         ncpu <- getNumProcessors
@@ -116,9 +116,16 @@ main = do
           , "--force-reinstalls"
           , j
           ]
-        let build = callProcess cabal ["build", j]
         -- When the public interface of package dependencies changes, the local package needs to be reconfigured.
-        catch build (handler $ callProcess cabal ["configure"] >> build)
+        (exitCode, out1, out2) <- readProcessWithExitCode cabal ["build", j] ""
+        hPutStr stdout out1
+        hPutStr stderr out2
+        case exitCode of
+          ExitSuccess -> return ()
+          ExitFailure code -> do
+            if any (List.isInfixOf "cannot satisfy -package-id") $ lines out1 ++ lines out2
+            then callProcess cabal ["configure"] >> callProcess cabal ["build", j]
+            else execError cabal code
 
   case args of
     ("init":_) -> do
