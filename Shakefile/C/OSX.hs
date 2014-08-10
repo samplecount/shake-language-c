@@ -14,15 +14,15 @@
 
 module Shakefile.C.OSX (
     DeveloperPath
-  , getDeveloperPath
-  , getLatestPlatform
+  , getSDKRoot
   , macOSX
   , iPhoneOS
   , iPhoneSimulator
   , target
-  , getDefaultToolChain
   , sdkVersion
   , toolChain
+  , getPlatformVersions
+  , getDefaultToolChain
   , macosx_version_min
   , iphoneos_version_min
   , universalBinary
@@ -31,32 +31,26 @@ module Shakefile.C.OSX (
 import           Control.Applicative hiding ((*>))
 import           Data.List (stripPrefix)
 import           Data.List.Split (splitOn)
+import           Data.Maybe
 import           Data.Version (Version(..), showVersion)
 import           Development.Shake as Shake
 import           Development.Shake.FilePath
 import           Shakefile.C
 import           Shakefile.Label (append, get, prepend, set)
-import qualified System.Directory as Dir
 import           System.Process (readProcess)
+import           Text.Read (readEither)
 
 archFlags :: Target -> [String]
 archFlags t = ["-arch", archString (targetArch t)]
 
-newtype DeveloperPath = DeveloperPath { developerPath :: FilePath } deriving (Show)
+newtype DeveloperPath = DeveloperPath FilePath
+                        deriving (Show)
 
 -- | Get base path of development tools on OSX.
-getDeveloperPath :: IO DeveloperPath
-getDeveloperPath =
+getSDKRoot :: Action DeveloperPath
+getSDKRoot = liftIO $
   (DeveloperPath . head . splitOn "\n")
     <$> readProcess "xcode-select" ["--print-path"] ""
-
-sdkDirectory :: DeveloperPath -> String -> FilePath
-sdkDirectory developer platform =
-      developerPath developer
-  </> "Platforms"
-  </> (platform ++ ".platform")
-  </> "Developer"
-  </> "SDKs"
 
 macOSX :: Platform
 macOSX = Platform "MacOSX"
@@ -70,27 +64,34 @@ iPhoneSimulator = Platform "iPhoneSimulator"
 target :: Platform -> Arch -> Target
 target = Target OSX
 
-platformSDKPath :: DeveloperPath -> Platform -> Version -> FilePath
-platformSDKPath developer platform version =
-      sdkDirectory developer (platformName platform)
+sdkDirectory :: FilePath -> Platform -> FilePath
+sdkDirectory sdkRoot platform =
+      sdkRoot
+  </> "Platforms"
+  </> (platformName platform ++ ".platform")
+  </> "Developer"
+  </> "SDKs"
+
+platformSDKPath :: FilePath -> Platform -> Version -> FilePath
+platformSDKPath sdkRoot platform version =
+      sdkDirectory sdkRoot platform
   </> platformName platform ++ showVersion version ++ ".sdk"
 
-getLatestPlatform :: DeveloperPath -> (Version -> Platform) -> IO Platform
-getLatestPlatform developer mkPlatform = do
-  dirs <- Dir.getDirectoryContents $ sdkDirectory developer name
-  let maxVersion = case [ x | Just x <- map (fmap (  map read {- slip in an innocent read, can't fail, can it? -}
-                                                   . splitOn "."
-                                                   . dropExtension)
-                                                  . stripPrefix name)
-                                            dirs ] of
-                      [] -> error $ "OSX: No SDK found for " ++ name
-                      xs -> maximum xs
-  return $ mkPlatform $ Version maxVersion []
-  where name = platformName (mkPlatform (Version [] []))
+getPlatformVersions :: Platform -> DeveloperPath -> Action [Version]
+getPlatformVersions platform (DeveloperPath sdkRoot) = do
+  dirs <- getDirectoryDirs (sdkDirectory sdkRoot platform)
+  case mapMaybe (stripPrefix name) dirs of
+    [] -> error $ "OSX: No SDK found for " ++ name
+    xs -> return [ flip Version []
+                 . map (either error id . readEither)
+                 . splitOn "."
+                 . dropExtension $ x
+                 | x <- xs ]
+  where name = platformName platform
 
 -- | Get OSX system version (first two digits).
-getSystemVersion :: IO Version
-getSystemVersion =
+systemVersion :: Action Version
+systemVersion = liftIO $
   flip Version []
     <$> (map read . take 2 . splitOn ".")
     <$> readProcess "sw_vers" ["-productVersion"] ""
@@ -100,17 +101,17 @@ getDefaultToolChain = do
     let defaultTarget = target macOSX (X86 X86_64)
     return ( defaultTarget
            , toolChain
-               <$> liftIO getDeveloperPath
-               <*> liftIO getSystemVersion
+               <$> getSDKRoot
+               <*> systemVersion
                <*> pure defaultTarget )
 
 sdkVersion :: Int -> Int -> Version
 sdkVersion major minor = Version [major, minor] []
 
 toolChain :: DeveloperPath -> Version -> Target -> ToolChain
-toolChain developer version t =
+toolChain (DeveloperPath sdkRoot) version t =
     set variant LLVM
-  $ set toolDirectory (Just (developerPath developer </> "Toolchains/XcodeDefault.xctoolchain/usr/bin"))
+  $ set toolDirectory (Just (sdkRoot </> "Toolchains/XcodeDefault.xctoolchain/usr/bin"))
   $ set compilerCommand "clang"
   $ set archiverCommand "libtool"
   $ set archiver (\tc flags inputs output -> do
@@ -134,7 +135,7 @@ toolChain developer version t =
       . append compilerFlags [(Nothing, archFlags t)]
       . append linkerFlags (archFlags t ++ [ "-isysroot", sysRoot ]) )
   $ defaultToolChain
-  where sysRoot = platformSDKPath developer (targetPlatform t) version
+  where sysRoot = platformSDKPath sdkRoot (targetPlatform t) version
 
 macosx_version_min :: Version -> BuildFlags -> BuildFlags
 macosx_version_min version =
