@@ -25,6 +25,7 @@ import Control.Applicative
 import Data.Char (toLower)
 import Data.List (intercalate, isPrefixOf)
 import Development.Shake
+import Development.Shake.FilePath
 import Shakefile.C ( BuildFlags
                    , compilerFlags
                    , libraries
@@ -34,7 +35,6 @@ import Shakefile.C ( BuildFlags
                    , userIncludes )
 import Shakefile.Label (append)
 import Shakefile.C.Util (words')
-import System.FilePath (searchPathSeparator)
 
 -- ====================================================================
 -- PkgConfig
