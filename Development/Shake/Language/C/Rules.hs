@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-module Shakefile.C.Rules (
+module Development.Shake.Language.C.Rules (
     executable
   , staticLibrary
   , sharedLibrary
@@ -21,9 +21,9 @@ module Shakefile.C.Rules (
 
 import           Development.Shake
 import           Development.Shake.FilePath
-import           Shakefile.C.BuildFlags as BuildFlags
-import           Shakefile.C.ToolChain as ToolChain
-import           Shakefile.Label (get)
+import           Development.Shake.Language.C.BuildFlags as BuildFlags
+import           Development.Shake.Language.C.ToolChain as ToolChain
+import           Development.Shake.Language.C.Label (get)
 
 mkObjectsDir :: FilePath -> FilePath
 mkObjectsDir path = takeDirectory path </> map tr (takeFileName path) ++ "_obj"

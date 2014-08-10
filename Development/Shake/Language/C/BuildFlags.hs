@@ -14,7 +14,7 @@
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Shakefile.C.BuildFlags (
+module Development.Shake.Language.C.BuildFlags (
     BuildFlags
   , defaultBuildFlags
   , systemIncludes
@@ -37,9 +37,9 @@ import           Data.List
 import           Data.List.Split
 import           Data.Maybe
 import           Development.Shake
-import           Shakefile.C.Language (Language(..))
-import           Shakefile.C.Util (concatMapFlag, words')
-import           Shakefile.Label (append, get, mkLabel)
+import           Development.Shake.Language.C.Language (Language(..))
+import           Development.Shake.Language.C.Util (concatMapFlag, words')
+import           Development.Shake.Language.C.Label (append, get, mkLabel)
 
 data BuildFlags = BuildFlags {
     _systemIncludes :: [FilePath]

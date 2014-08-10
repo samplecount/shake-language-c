@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-module Shakefile.C.Host (
+module Development.Shake.Language.C.Host (
     OS(..)
   , os
   , executableExtension
@@ -22,10 +22,10 @@ module Shakefile.C.Host (
 ) where
 
 import           Development.Shake (Action)
-import           Shakefile.C (Target, ToolChain)
-import qualified Shakefile.C.Linux as Linux
-import qualified Shakefile.C.OSX as OSX
-import qualified Shakefile.C.Windows as Windows
+import           Development.Shake.Language.C (Target, ToolChain)
+import qualified Development.Shake.Language.C.Linux as Linux
+import qualified Development.Shake.Language.C.OSX as OSX
+import qualified Development.Shake.Language.C.Windows as Windows
 import qualified System.Info as System
 import           System.IO.Unsafe (unsafePerformIO)
 

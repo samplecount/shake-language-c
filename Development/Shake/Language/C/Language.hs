@@ -14,7 +14,7 @@
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Shakefile.C.Language (
+module Development.Shake.Language.C.Language (
     Language(..)
   , defaultLanguageMap
   , languageOf

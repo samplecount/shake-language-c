@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-module Shakefile.C.OSX (
+module Development.Shake.Language.C.OSX (
     DeveloperPath
   , getSDKRoot
   , macOSX
@@ -35,8 +35,8 @@ import           Data.Maybe
 import           Data.Version (Version(..), showVersion)
 import           Development.Shake as Shake
 import           Development.Shake.FilePath
-import           Shakefile.C
-import           Shakefile.Label (append, get, prepend, set)
+import           Development.Shake.Language.C
+import           Development.Shake.Language.C.Label (append, get, prepend, set)
 import           System.Process (readProcess)
 import           Text.Read (readEither)
 

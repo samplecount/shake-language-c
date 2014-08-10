@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable, GeneralizedNewtypeDeriving #-}
 
-module Shakefile.Config(
+module Development.Shake.Language.C.Config(
     withConfig
   , getList
 ) where
@@ -10,7 +10,7 @@ import qualified Data.HashMap.Strict as Map
 import Development.Shake
 import Development.Shake.Classes
 import Development.Shake.Config (readConfigFile)
-import Shakefile.C.Util (words')
+import Development.Shake.Language.C.Util (words')
 
 newtype Config = Config (FilePath, String) deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
 

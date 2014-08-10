@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-module Shakefile.C.Android (
+module Development.Shake.Language.C.Android (
     target
   , sdkVersion
   , toolChain
@@ -25,8 +25,8 @@ module Shakefile.C.Android (
 import           Control.Arrow
 import           Development.Shake.FilePath
 import           Data.Version (Version(..), showVersion)
-import           Shakefile.C
-import           Shakefile.Label (set, append)
+import           Development.Shake.Language.C
+import           Development.Shake.Language.C.Label (set, append)
 import qualified System.Info as System
 
 unsupportedArch :: Arch -> a

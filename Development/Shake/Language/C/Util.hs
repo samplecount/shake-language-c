@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-module Shakefile.C.Util (
+module Development.Shake.Language.C.Util (
     mapFlag
   , concatMapFlag
   , words'

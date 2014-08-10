@@ -1,4 +1,4 @@
--- Copyright 2012-2014 Samplecount S.L.
+-- Copyright 2012-2013 Samplecount S.L.
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -12,18 +12,19 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-module Shakefile.C (
-    module Shakefile.C.BuildFlags
-  , module Shakefile.C.Language
-  , module Shakefile.C.Rules
-  , module Shakefile.C.Target
-  , module Shakefile.C.ToolChain
-  , module Shakefile.C.Util
+{-# LANGUAGE TypeOperators #-}
+
+module Development.Shake.Language.C.Label (
+    module Data.Label
+  , append
+  , prepend
 ) where
 
-import Shakefile.C.BuildFlags hiding (defaultBuildFlags)
-import Shakefile.C.Language
-import Shakefile.C.Rules
-import Shakefile.C.Target
-import Shakefile.C.ToolChain
-import Shakefile.C.Util
+import Data.Label
+import Data.Monoid (Monoid, mappend)
+
+append :: Monoid a => (f :-> a) -> a -> f -> f
+append l n = modify l (`mappend` n)
+
+prepend :: Monoid a => (f :-> a) -> a -> f -> f
+prepend l n = modify l (n `mappend`)

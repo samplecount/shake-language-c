@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-module Shakefile.C.NaCl (
+module Development.Shake.Language.C.NaCl (
     pepper
   , canary
   , target
@@ -32,10 +32,10 @@ import           Data.List (intercalate)
 import           Development.Shake
 import           Development.Shake.FilePath
 import           Data.Version (Version(..))
-import           Shakefile.C hiding (Arch)
-import qualified Shakefile.C as C
-import qualified Shakefile.C.Host as Host
-import           Shakefile.Label (append, get, set)
+import           Development.Shake.Language.C hiding (Arch)
+import qualified Development.Shake.Language.C as C
+import qualified Development.Shake.Language.C.Host as Host
+import           Development.Shake.Language.C.Label (append, get, set)
 
 pepper :: Int -> Version
 pepper apiVersion = Version [apiVersion] []

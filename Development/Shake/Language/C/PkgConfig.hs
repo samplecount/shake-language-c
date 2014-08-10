@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-module Shakefile.C.PkgConfig (
+module Development.Shake.Language.C.PkgConfig (
     Options(..)
   , defaultOptions
   , pkgConfigWithOptions
@@ -26,15 +26,15 @@ import Data.Char (toLower)
 import Data.List (intercalate, isPrefixOf)
 import Development.Shake
 import Development.Shake.FilePath
-import Shakefile.C ( BuildFlags
+import Development.Shake.Language.C ( BuildFlags
                    , compilerFlags
                    , libraries
                    , libraryPath
                    , linkerFlags
                    , systemIncludes
                    , userIncludes )
-import Shakefile.Label (append)
-import Shakefile.C.Util (words')
+import Development.Shake.Language.C.Label (append)
+import Development.Shake.Language.C.Util (words')
 
 -- ====================================================================
 -- PkgConfig

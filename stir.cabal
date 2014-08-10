@@ -33,23 +33,23 @@ Extra-Source-Files:
 Library
   Hs-Source-Dirs: .
   Exposed-Modules:
-    Shakefile.C
-    Shakefile.C.Android
-    Shakefile.C.BuildFlags
-    Shakefile.C.Host
-    Shakefile.C.Language
-    Shakefile.C.Linux
-    Shakefile.C.NaCl
-    Shakefile.C.OSX
-    Shakefile.C.PkgConfig
-    Shakefile.C.Rules
-    Shakefile.C.ToolChain
-    Shakefile.C.Util
-    Shakefile.C.Windows
-    Shakefile.Config
-    Shakefile.Label
+    Development.Shake.Language.C
+    Development.Shake.Language.C.Android
+    Development.Shake.Language.C.BuildFlags
+    Development.Shake.Language.C.Config
+    Development.Shake.Language.C.Host
+    Development.Shake.Language.C.Language
+    Development.Shake.Language.C.Label
+    Development.Shake.Language.C.Linux
+    Development.Shake.Language.C.NaCl
+    Development.Shake.Language.C.OSX
+    Development.Shake.Language.C.PkgConfig
+    Development.Shake.Language.C.Rules
+    Development.Shake.Language.C.ToolChain
+    Development.Shake.Language.C.Util
+    Development.Shake.Language.C.Windows
   Other-Modules:
-    Shakefile.C.Target
+    Development.Shake.Language.C.Target
   Ghc-Options: -Wall
   Build-Depends:
       base >= 4 && < 5

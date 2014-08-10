@@ -1,4 +1,4 @@
--- Copyright 2012-2013 Samplecount S.L.
+-- Copyright 2014 Samplecount S.L.
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -12,19 +12,20 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-module Shakefile.C.Linux (
+module Development.Shake.Language.C.Windows (
     toolChain
   , getDefaultToolChain
 ) where
 
-import Data.Label (get, set)
-import Development.Shake
-import Shakefile.C
-import System.Process (readProcess)
+import           Data.Label (get, set)
+import           Development.Shake
+import           Development.Shake.Language.C
+import qualified System.Info as System
 
 getHostArch :: IO Arch
 getHostArch = do
-    arch <- fmap (head.lines) $ readProcess "arch" [] ""
+    -- TODO: Get the info from the environment
+    let arch = System.arch
     return $ case arch of
         "i386" -> X86 I386
         "i686" -> X86 I686
@@ -32,24 +33,22 @@ getHostArch = do
         _ -> error $ "Unknown host architecture " ++ arch
 
 target :: Arch -> Target
-target = Target Linux (Platform "linux")
-
-platformArchiver :: Archiver
-platformArchiver tc buildFlags inputs output = do
-    need inputs
-    command_ [] (tool tc archiverCommand)
-      $  ["cr"]
-      ++ get archiverFlags buildFlags
-      ++ [output]
-      ++ inputs
-    command_ [] (toolFromString tc "ranlib") [output]
+target = Target Windows (Platform "windows")
 
 toolChain :: ToolChainVariant -> ToolChain
 toolChain GCC =
     set variant GCC
   $ set compilerCommand "gcc"
   $ set archiverCommand "ar"
-  $ set archiver platformArchiver
+  $ set archiver (\tc flags inputs output -> do
+      need inputs
+      command_ [] (tool tc archiverCommand)
+            $  ["cr"]
+            ++ get archiverFlags flags
+            ++ [output]
+            ++ inputs
+      command_ [] (toolFromString tc "ranlib") [output]
+    )
   $ set linkerCommand "g++"
   $ defaultToolChain
 toolChain LLVM =
@@ -63,4 +62,4 @@ toolChain Generic = toolChain GCC
 getDefaultToolChain :: IO (Target, Action ToolChain)
 getDefaultToolChain = do
     t <- fmap target getHostArch
-    return (t, return $ toolChain GCC)
+    return (t, return $ toolChain Generic)

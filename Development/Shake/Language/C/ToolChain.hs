@@ -15,7 +15,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Shakefile.C.ToolChain (
+module Development.Shake.Language.C.ToolChain (
     Linkage(..)
   , LinkResult(..)
   , ToolChain
@@ -47,10 +47,10 @@ import           Data.List (isInfixOf)
 import           Development.Shake
 import           Development.Shake.FilePath
 import           Development.Shake.Util (needMakefileDependencies)
-import           Shakefile.Label ((:->), append, get, mkLabel, prepend, set)
-import           Shakefile.C.BuildFlags hiding (defaultBuildFlags)
-import           Shakefile.C.Language (languageOf)
-import           Shakefile.C.Util (concatMapFlag, mapFlag)
+import           Development.Shake.Language.C.Label ((:->), append, get, mkLabel, prepend, set)
+import           Development.Shake.Language.C.BuildFlags hiding (defaultBuildFlags)
+import           Development.Shake.Language.C.Language (languageOf)
+import           Development.Shake.Language.C.Util (concatMapFlag, mapFlag)
 
 data Linkage = Static | Shared deriving (Enum, Eq, Show)
 
