@@ -22,10 +22,11 @@ module Development.Shake.Language.C.Host (
 ) where
 
 import           Development.Shake (Action)
-import           Development.Shake.Language.C (Target, ToolChain)
-import qualified Development.Shake.Language.C.Linux as Linux
-import qualified Development.Shake.Language.C.OSX as OSX
-import qualified Development.Shake.Language.C.Windows as Windows
+import           Development.Shake.Language.C.Target (Target)
+import qualified Development.Shake.Language.C.Target.Linux as Linux
+import qualified Development.Shake.Language.C.Target.OSX as OSX
+import qualified Development.Shake.Language.C.Target.Windows as Windows
+import           Development.Shake.Language.C.ToolChain (ToolChain)
 import qualified System.Info as System
 import           System.IO.Unsafe (unsafePerformIO)
 

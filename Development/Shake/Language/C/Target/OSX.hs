@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-module Development.Shake.Language.C.OSX (
+module Development.Shake.Language.C.Target.OSX (
     DeveloperPath
   , getSDKRoot
   , macOSX

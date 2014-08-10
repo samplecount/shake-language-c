@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-module Development.Shake.Language.C.Linux (
+module Development.Shake.Language.C.Target.Linux (
     toolChain
   , getDefaultToolChain
 ) where

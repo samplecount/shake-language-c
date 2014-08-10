@@ -34,20 +34,20 @@ Library
   Hs-Source-Dirs: .
   Exposed-Modules:
     Development.Shake.Language.C
-    Development.Shake.Language.C.Android
     Development.Shake.Language.C.BuildFlags
     Development.Shake.Language.C.Config
     Development.Shake.Language.C.Host
     Development.Shake.Language.C.Language
     Development.Shake.Language.C.Label
-    Development.Shake.Language.C.Linux
-    Development.Shake.Language.C.NaCl
-    Development.Shake.Language.C.OSX
     Development.Shake.Language.C.PkgConfig
     Development.Shake.Language.C.Rules
+    Development.Shake.Language.C.Target.Android
+    Development.Shake.Language.C.Target.Linux
+    Development.Shake.Language.C.Target.NaCl
+    Development.Shake.Language.C.Target.OSX
+    Development.Shake.Language.C.Target.Windows
     Development.Shake.Language.C.ToolChain
     Development.Shake.Language.C.Util
-    Development.Shake.Language.C.Windows
   Other-Modules:
     Development.Shake.Language.C.Target
   Ghc-Options: -Wall
