@@ -47,9 +47,7 @@ Library
     Shakefile.C.Util
     Shakefile.C.Windows
     Shakefile.Config
-    Shakefile.Configuration
     Shakefile.Label
-    Shakefile.SourceTree
   Other-Modules:
     Shakefile.C.Target
   Ghc-Options: -Wall
