@@ -14,7 +14,7 @@
 
 module Shakefile.C.Android (
     target
-  , apiVersion
+  , sdkVersion
   , toolChain
   , abiString
   , gnustl
@@ -83,8 +83,8 @@ mkDefaultBuildFlags ndk version arch =
     archLinkerFlags (Arm Armv7)   = ["-Wl,--fix-cortex-a8"]
     archLinkerFlags _             = []
 
-apiVersion :: Int -> Version
-apiVersion n = Version [n] []
+sdkVersion :: Int -> Version
+sdkVersion n = Version [n] []
 
 toolChain :: FilePath -> Version -> (ToolChainVariant, Version) -> Target -> ToolChain
 toolChain "" _ (_, _) _ = error "Empty NDK directory"
