@@ -35,7 +35,7 @@ A more complex [build script](https://github.com/samplecount/methcla/tree/develo
 
 ## shake build script
 
-Build systems written in Shake need to be compiled, see the [Shake manual][shake-manual] for reference. This library contains a simple Haskell script, [shake](https://github.com/samplecount/stir/blob/master/shake), that takes care of all the details given a simple (and optional) configuration file. The only prerequisite for running the script is installing the latest [Haskell platform](http://www.haskell.org/platform/).
+Build systems written in Shake normally need to be compiled, see the [Shake manual][shake-manual] for more information. This library contains a simple Haskell script, [shake](https://github.com/samplecount/stir/blob/master/shake), that takes care of all the details given a simple (and optional) configuration file. The only prerequisite for running the script is installing the latest [Haskell platform](http://www.haskell.org/platform/).
 
 [Copy](https://raw.githubusercontent.com/samplecount/stir/master/shake) or link the script to your source folder, write a file `shakefile.hs` with Shake rule definitions and a file `shake.cfg`, at least specifying `shake` as a dependency and also `fclabels` if you're using `shake-language-c` (see below for more configuration options).
 
