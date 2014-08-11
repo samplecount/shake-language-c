@@ -1,6 +1,6 @@
-# shake-language-c cross-compilation framework
+# shake-language-c
 
-**shake-language-c** is a cross-platform build system based on the [Shake][] Haskell library. The focus is on cross-compilation of *C*, *C++* and *Objective C* source code to various target platforms. Currently supported platforms are *iOS*, *Android NDK*, *Google Portable Native Client*, *MacOS X*, *Linux* and *Windows* (*MinGW*).
+**shake-language-c** is a cross-platform build system based on the [Shake][] Haskell library. The focus is on cross-compilation of *C*, *C++* and *Objective C* source code to various target platforms. Currently supported target platforms are *iOS*, *Android NDK*, *Google Portable Native Client*, *MacOS X*, *Linux* and *Windows* (*MinGW*). Supported host platforms are *MacOS X*, *Linux* and *Windows*.
 
 ## Examples
 
