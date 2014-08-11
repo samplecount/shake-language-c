@@ -12,10 +12,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-Name: stir
+Name: shake-language-c
 Version: 0.4.0
-Synopsis: Build system based on shake
-Description: Stir is a build system based on shake with a focus on cross-compiling C/C++/ObjC code for various target platforms. The list of supported platforms includes Android, Linux, MacOS X, iOS and Google Native Client.
+Synopsis: Utilities for cross-compiling with Shake
+Description: This library provides Stir utilities for Shake with a focus on cross-compiling C/C++/ObjC code for various target platforms. The list of supported platforms includes Android, iOS, Linux, MacOS X, Windows/MinGW and Google Portable Native Client.
 Category: Development
 License: Apache-2.0
 License-File: LICENSE
