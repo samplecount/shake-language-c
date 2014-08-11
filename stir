@@ -47,8 +47,8 @@ checkExitCode :: FilePath -> ExitCode -> IO ()
 checkExitCode _ ExitSuccess = return ()
 checkExitCode path (ExitFailure code) = execError path code
 
-traceCommand path args = hPutStrLn stderr $ "TRACE: " ++ unwords ([path] ++ args)
--- traceCommand _ _ = return ()
+-- traceCommand path args = hPutStrLn stderr $ "TRACE: " ++ unwords ([path] ++ args)
+traceCommand _ _ = return ()
 
 -- Not yet in process-1.1
 callProcess :: String -> [String] -> IO ()
@@ -110,18 +110,18 @@ getBuildCommand cabalFile pkg =
       let exe = Dist.exeName spec
       when (not (null rest)) $
         hPutStrLn stderr $ "Multiple executables found in " ++ cabalFile ++ ", using " ++ exe
-      return $ "dist" </> "build" </> exe </> exe
-
-buildCommandPath :: String -> FilePath
-buildCommandPath exe = "dist" </> "build" </> exe </> exe
+      return $ buildDir </> "build" </> exe </> exe
 
 configPackageDirs :: [(String, String)] -> [FilePath]
 configPackageDirs = maybe [] id
                   . fmap lines
                   . lookup configFieldPackageDirs
 
-hasSandbox :: IO Bool
-hasSandbox = Dir.doesDirectoryExist ".cabal-sandbox"
+sandboxDir :: FilePath
+sandboxDir = ".cabal-sandboxDir"
+
+buildDir :: FilePath
+buildDir = "dist"
 
 main :: IO ()
 main = do
@@ -140,44 +140,41 @@ main = do
         --   "--disable-library-profiling"
         -- , "--disable-executable-profiling"
         ]
+      configure =
+        callProcess cabal $ ["configure"] ++ configureArgs
       initialize = do
         callProcess cabal ["sandbox", "init"]
         mapM_ (\dir -> callProcess cabal ["sandbox", "add-source", dir])
               (configPackageDirs config)
         callProcess cabal $ ["install"] ++ configureArgs ++
                             ["--only-dependencies", "--disable-documentation", j]
-        callProcess cabal $ ["configure"] ++ configureArgs
+        configure
       update = do
-        -- Call initialize if either the sandbox or the build executable don't exist.
-        sandboxExists <- hasSandbox
-        exe <- getBuildCommand cabalFile pkg
-        print [show sandboxExists, exe]
-        exeExists <- Dir.doesFileExist exe
-        unless (sandboxExists && exeExists) $ do
-          putStrLn "Reinitializing ..."
-          initialize
+        sandboxExists <- Dir.doesDirectoryExist sandboxDir
+        exeExists <- Dir.doesFileExist =<< getBuildCommand cabalFile pkg
 
-        -- Update dependencies
-        -- j <- (("-j"++) . show) <$> getNumProcessors
-        -- callProcess cabal $ ["install"] ++ configureArgs ++
-        --   [ "--only-dependencies"
-        --   , "--force-reinstalls"
-        --   , j ]
+        if not sandboxExists
+          then initialize
+          else if not exeExists
+               then configure
+               else return ()
 
         -- Update build executable
         -- When the public interface of package dependencies changes, the local package needs to be reconfigured.
         reconfigure <- newMVar False
+
         exitCode <- callProcessFilter cabal ["build", j] $ \h line -> do
           hPutStrLn h line
           when (List.isInfixOf "cannot satisfy -package-id" line)
             $ void $ swapMVar reconfigure True
+
         case exitCode of
           ExitSuccess -> return ()
           ExitFailure code -> do
             b <- readMVar reconfigure
             if b
             then do
-              callProcess cabal $ ["configure"] ++ configureArgs
+              configure
               callProcess cabal ["build", j]
             else execError cabal code
 
@@ -193,11 +190,11 @@ main = do
       exe <- getBuildCommand cabalFile pkg
       exeExists <- Dir.doesFileExist exe
       when exeExists $ callProcess_ exe ["clean"]
-      distExist <- Dir.doesDirectoryExist "dist"
+      distExist <- Dir.doesDirectoryExist buildDir
       when distExist $
-        Dir.removeDirectoryRecursive "dist"
-      hasSandbox' <- hasSandbox
-      when hasSandbox' $
+        Dir.removeDirectoryRecursive buildDir
+      hasSandbox <- Dir.doesDirectoryExist sandboxDir
+      when hasSandbox $
         callProcess cabal ["sandbox", "delete"]
     (('.':cmd):_) -> do
       hPutStrLn stderr $ "Usage: " ++ progName ++ " .init|.update|.scrub|SHAKE_ARGS..."
