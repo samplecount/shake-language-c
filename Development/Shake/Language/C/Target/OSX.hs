@@ -35,8 +35,10 @@ import           Data.Maybe
 import           Data.Version (Version(..), showVersion)
 import           Development.Shake as Shake
 import           Development.Shake.FilePath
-import           Development.Shake.Language.C
+import           Development.Shake.Language.C.BuildFlags
+import           Development.Shake.Language.C.Target
 import           Development.Shake.Language.C.Label
+import           Development.Shake.Language.C.ToolChain
 import           System.Process (readProcess)
 import           Text.Read (readEither)
 

@@ -33,7 +33,8 @@ import           Development.Shake
 import           Development.Shake.FilePath
 import           Data.Version (Version(..))
 import           Development.Shake.Language.C hiding (Arch)
-import qualified Development.Shake.Language.C as C
+import qualified Development.Shake.Language.C.Target as C
+import           Development.Shake.Language.C.ToolChain
 import qualified Development.Shake.Language.C.Host as Host
 import           Development.Shake.Language.C.Label
 

@@ -25,5 +25,26 @@ import Development.Shake.Language.C.BuildFlags
 import Development.Shake.Language.C.Language
 import Development.Shake.Language.C.Rules
 import Development.Shake.Language.C.Target
-import Development.Shake.Language.C.ToolChain
+import Development.Shake.Language.C.ToolChain (
+    Linkage(..)
+  , LinkResult(..)
+  , ToolChain
+  , ToolChainVariant(..)
+  , toolDirectory
+  , toolPrefix
+  , variant
+  , compilerCommand
+  , compiler
+  , archiverCommand
+  , archiver
+  , linkerCommand
+  , linker
+  , defaultBuildFlags
+  , defaultCompiler
+  , Archiver
+  , defaultArchiver
+  , Linker
+  , defaultLinker
+  , applyEnv
+  )
 import Development.Shake.Language.C.Util

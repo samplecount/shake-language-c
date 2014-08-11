@@ -19,7 +19,9 @@ module Development.Shake.Language.C.Target.Windows (
 
 import           Data.Label (get, set)
 import           Development.Shake
-import           Development.Shake.Language.C
+import           Development.Shake.Language.C.BuildFlags
+import           Development.Shake.Language.C.Target
+import           Development.Shake.Language.C.ToolChain
 import qualified System.Info as System
 
 getHostArch :: IO Arch

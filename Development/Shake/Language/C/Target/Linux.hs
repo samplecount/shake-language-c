@@ -19,7 +19,9 @@ module Development.Shake.Language.C.Target.Linux (
 
 import Data.Label (get, set)
 import Development.Shake
-import Development.Shake.Language.C
+import Development.Shake.Language.C.BuildFlags
+import Development.Shake.Language.C.Target
+import Development.Shake.Language.C.ToolChain
 import System.Process (readProcess)
 
 getHostArch :: IO Arch
