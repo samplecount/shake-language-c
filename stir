@@ -1,4 +1,5 @@
 #!/usr/bin/env runhaskell
+
 -- Copyright 2013-2014 Samplecount S.L.
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +15,8 @@
 -- limitations under the License.
 
 import           Control.Applicative
+import           Control.Concurrent
+import           Control.Concurrent.MVar
 import           Control.Monad
 import           Data.Char (toLower)
 import qualified Data.List as List
@@ -26,31 +29,62 @@ import qualified System.Directory as Dir
 import qualified System.Environment as Env
 import           System.Exit (ExitCode(..), exitFailure)
 import           System.FilePath
-import           System.IO (hPutStr, hPutStrLn, stderr, stdout)
-import           System.Process (readProcessWithExitCode, rawSystem)
+import           System.IO
+import qualified System.IO.Error as IO
+import qualified System.Process as Proc
 
 -- Cabal configuration fields:
 
 configFieldPackageDirs :: String
 configFieldPackageDirs = "x-stir-package-dirs"
 
+-- Process utilities
+
 execError :: FilePath -> Int -> IO ()
 execError path code = error $ takeFileName path ++ " failed with exit code " ++ show code
+
+checkExitCode :: FilePath -> ExitCode -> IO ()
+checkExitCode _ ExitSuccess = return ()
+checkExitCode path (ExitFailure code) = execError path code
+
+traceCommand path args = hPutStrLn stderr $ "TRACE: " ++ unwords ([path] ++ args)
+-- traceCommand _ _ = return ()
 
 -- Not yet in process-1.1
 callProcess :: String -> [String] -> IO ()
 callProcess path args = do
-  -- print $ [path] ++ args
-  exitCode <- rawSystem path args
-  case exitCode of
-    ExitSuccess -> return ()
-    ExitFailure code -> execError path code
+  traceCommand path args
+  Proc.rawSystem path args >>= checkExitCode path
 
 -- Ignore exit code
 callProcess_ :: String -> [String] -> IO ()
 callProcess_ path args = do
-  _ <- rawSystem path args
+  traceCommand path args
+  _ <- Proc.rawSystem path args
   return ()
+
+callProcessFilter :: String -> [String] -> (Handle -> String -> IO ()) -> IO ExitCode
+callProcessFilter cmd args action = do
+  traceCommand cmd args
+  (_, Just out, Just err, pid) <-
+    Proc.createProcess $ (Proc.proc cmd args) {
+                            Proc.std_out = Proc.CreatePipe
+                          , Proc.std_err = Proc.CreatePipe }
+
+  mapM_ (flip hSetBinaryMode False) [out, err]
+  mapM_ (flip hSetBuffering LineBuffering) [out, err]
+
+  forM_ [(out, stdout), (err, stderr)] $ \(hin, hout) -> do
+    let isError = flip any [IO.isEOFError, IO.isIllegalOperation] . flip ($)
+    forkIO $ flip IO.catchIOError (\e -> if isError e then return () else ioError e)
+           $ forever $ hGetLine hin >>= action hout
+
+  ec <- Proc.waitForProcess pid
+
+  hClose out
+  hClose err
+
+  return ec
 
 findExecutable :: String -> IO FilePath
 findExecutable exe = maybe (error $ exe ++ " executable not found") id
@@ -98,44 +132,63 @@ main = do
   progName <- Env.getProgName
   args <- Env.getArgs
 
-  let initialize = do
+  j <- (("-j"++) . show) <$> getNumProcessors
+  -- let j = "-j1"
+
+  let configureArgs = [
+          -- These might be defined in the user's cabal config file and effectively double compilation times
+        --   "--disable-library-profiling"
+        -- , "--disable-executable-profiling"
+        ]
+      initialize = do
         callProcess cabal ["sandbox", "init"]
         mapM_ (\dir -> callProcess cabal ["sandbox", "add-source", dir])
               (configPackageDirs config)
+        callProcess cabal $ ["install"] ++ configureArgs ++
+                            ["--only-dependencies", "--disable-documentation", j]
+        callProcess cabal $ ["configure"] ++ configureArgs
       update = do
-        hasSandbox' <- hasSandbox
-        unless hasSandbox' initialize
-        ncpu <- getNumProcessors
-        let j = "-j" ++ show ncpu
-        callProcess cabal [
-            "install"
-            -- These might be defined in the user's cabal config file and effectively double compilation times
-          , "--disable-library-profiling"
-          , "--disable-executable-profiling"
-          , "--only-dependencies"
-          , "--force-reinstalls"
-          , j
-          ]
+        -- Call initialize if either the sandbox or the build executable don't exist.
+        sandboxExists <- hasSandbox
+        exe <- getBuildCommand cabalFile pkg
+        print [show sandboxExists, exe]
+        exeExists <- Dir.doesFileExist exe
+        unless (sandboxExists && exeExists) $ do
+          putStrLn "Reinitializing ..."
+          initialize
+
+        -- Update dependencies
+        -- j <- (("-j"++) . show) <$> getNumProcessors
+        -- callProcess cabal $ ["install"] ++ configureArgs ++
+        --   [ "--only-dependencies"
+        --   , "--force-reinstalls"
+        --   , j ]
+
+        -- Update build executable
         -- When the public interface of package dependencies changes, the local package needs to be reconfigured.
-        (exitCode, out1, out2) <- readProcessWithExitCode cabal ["build", j] ""
-        -- First output stderr
-        hPutStr stderr out2
-        hPutStr stdout out1
+        reconfigure <- newMVar False
+        exitCode <- callProcessFilter cabal ["build", j] $ \h line -> do
+          hPutStrLn h line
+          when (List.isInfixOf "cannot satisfy -package-id" line)
+            $ void $ swapMVar reconfigure True
         case exitCode of
           ExitSuccess -> return ()
           ExitFailure code -> do
-            if any (List.isInfixOf "cannot satisfy -package-id") $ lines out1 ++ lines out2
-            then callProcess cabal ["configure"] >> callProcess cabal ["build", j]
+            b <- readMVar reconfigure
+            if b
+            then do
+              callProcess cabal $ ["configure"] ++ configureArgs
+              callProcess cabal ["build", j]
             else execError cabal code
 
   case args of
-    ("init":_) -> do
+    (".init":_) -> do
       -- Initialize sandbox
       initialize
-    ("update":_) -> do
+    (".update":_) -> do
       -- Update build command
       update
-    ("scrub":_) -> do
+    (".scrub":_) -> do
       -- Clean everything
       exe <- getBuildCommand cabalFile pkg
       exeExists <- Dir.doesFileExist exe
@@ -146,9 +199,12 @@ main = do
       hasSandbox' <- hasSandbox
       when hasSandbox' $
         callProcess cabal ["sandbox", "delete"]
+    (('.':cmd):_) -> do
+      hPutStrLn stderr $ "Usage: " ++ progName ++ " .init|.update|.scrub|SHAKE_ARGS..."
+      exitFailure
     args -> do
       -- Call build command with arguments
       exe <- getBuildCommand cabalFile pkg
       exeExists <- Dir.doesFileExist exe
       unless exeExists $ update
-      callProcess exe args
+      callProcess exe (j:args)
