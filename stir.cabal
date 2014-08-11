@@ -37,7 +37,6 @@ Library
     Development.Shake.Language.C.BuildFlags
     Development.Shake.Language.C.Config
     Development.Shake.Language.C.Host
-    Development.Shake.Language.C.Language
     Development.Shake.Language.C.Label
     Development.Shake.Language.C.PkgConfig
     Development.Shake.Language.C.Rules
@@ -47,6 +46,7 @@ Library
     Development.Shake.Language.C.Target.OSX
     Development.Shake.Language.C.Target.Windows
   Other-Modules:
+    Development.Shake.Language.C.Language
     Development.Shake.Language.C.Target
     Development.Shake.Language.C.ToolChain
     Development.Shake.Language.C.Util
