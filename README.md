@@ -62,15 +62,11 @@ Now initialize the build system by running
 This will create a [Cabal sandbox](http://www.haskell.org/cabal/users-guide/installing-packages.html#developing-with-sandboxes
 ), install the dependencies and compile your build system script.
 
-Running `./shake` with any argument not starting with a `.` run your build script with the arguments passed on the command line, usually Shake options and targets to build.
+Running `./shake` with any argument not starting with a `.` runs your build script with the arguments passed on the command line, usually Shake options and targets to build.
 
-    ./shake .scrub
+`./shake .scrub` calls your build script's `clean` target and removes the Cabal sandbox and all build products.
 
-Call's your build script's `clean` target and removes the Cabal sandbox and all build products.
-
-    ./shake .init
-
-Initializes the sandbox and configures your package. This might be necessary sometimes but usually you don't need that command.
+`./shake .init` initializes the sandbox and configures your package. This might be necessary sometimes but usually you don't need that command.
 
 ### Cabal file extensions
 
