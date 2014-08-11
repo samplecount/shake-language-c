@@ -35,35 +35,54 @@ A more complex [build script](https://github.com/samplecount/methcla/tree/develo
 
 ## shake build script
 
-Build systems written in Shake normally need to be compiled, see the [Shake manual][shake-manual] for more information. This library contains a simple Haskell script, [shake](https://github.com/samplecount/stir/blob/master/shake), that takes care of all the details given a simple (and optional) configuration file. The only prerequisite for running the script is installing the latest [Haskell platform](http://www.haskell.org/platform/).
+Build systems written in Shake normally need to be compiled, see the [Shake manual][shake-manual] for more information. This library contains a simple Haskell script, [shake](https://github.com/samplecount/stir/blob/master/shake), that takes care of all the details. By building on the [Cabal][] infrastructure, build scripts can be compiled conveniently and also be reused as library components.
 
-[Copy](https://raw.githubusercontent.com/samplecount/stir/master/shake) or link the script to your source folder and write a file `shakefile.hs` containing Shake rule definitions. Create a file `shake.cfg`, at least specifying `shake` as a dependency and also `fclabels` if you're using `shake-language-c` (see below for more configuration options):
+The only prerequisite for running the script is installing the latest [Haskell platform](http://www.haskell.org/platform/).
 
-    [
-        ("dependencies", "fclabels shake")
-    ]
+[Copy](https://raw.githubusercontent.com/samplecount/stir/master/shake) or link the script to your source folder and write a file `shakefile.hs` containing Shake rule definitions. Create a file `shakefile.cabal` with the following contents:
 
-You can then initialize the build system by running `./shake .update`. Running the script creates a [Cabal sandbox][cabal-sandbox] and compiles your build system script.
+    Name: hearhearme-stirfile
+    Version: 0.1.0
+    Cabal-Version: >= 1.2
+    Build-Type: Simple
 
-Subsequent runs will and automatically run it with the arguments passed, usually Shake options and target.
+    Executable hearhearme-shakefile
+      Main-Is: shakefile.hs
+      Ghc-Options: -rtsopts -with-rtsopts=-I0
+      Build-Depends:
+          base == 4.*
+        , shake
 
-### Configuration file
+If you're using `shake-language-c, add it to the dependencies as well. Refer to the [Cabal manual][cabal] for more information about configuration file features.
 
-The configuration file is in Haskell syntax containing a simple list of string pairs. The following configuration settings are recognized:
+Now initialize the build system by running
 
-* `dependencies`: Space separated list of package dependencies
-* `source-packages`: Space separated list of directories containing Cabal packages (passed to `cabal sandbox add-source`)
-* `source-directories`: Space separated list of source module directories (passed to `ghc` during compilation)
-* `script`: Path to the build system script (default: `shakefile.hs`)
+    ./shake .update
 
-Here's an example configuration file that depends on three packages, one of them a source package:
+This will create a [Cabal sandbox](http://www.haskell.org/cabal/users-guide/installing-packages.html#developing-with-sandboxes
+), install the dependencies and compile your build system script.
 
-    [
-        ("dependencies", "fclabels shake filemanip")
-      , ("source-packages", "external_libraries/shake")
-      , ("source-directories", "external_libraries/stir")
-    ]
+Running `./shake` with any argument not starting with a `.` run your build script with the arguments passed on the command line, usually Shake options and targets to build.
 
+    ./shake .scrub
+
+Call's your build script's `clean` target and removes the Cabal sandbox and all build products.
+
+    ./shake .init
+
+Initializes the sandbox and configures your package. This might be necessary sometimes but usually you don't need that command.
+
+### Cabal file extensions
+
+The `shake` script supports the custom Cabal configuration setting `x-stir-package-dirs`. It allows to specify Cabal source packages that should be added to the sandbox with `cabal add-source`, for example:
+
+    X-Stir-Package-Dirs:
+      external_libraries/methcla/external_libraries/shake
+      external_libraries/methcla/external_libraries/stir
+      external_libraries/methcla
+
+Add this setting before the `Executable` section containing your build script. See [here](https://github.com/samplecount/methcla/blob/develop/shakefile.cabal) for an example of a production configuration file that also exports a library.
+
+[cabal]: http://www.haskell.org/cabal/users-guide/
 [shake]: https://github.com/ndmitchell/shake
 [shake-manual]: https://github.com/ndmitchell/shake/blob/master/docs/Manual.md
-[cabal-sandbox]: http://www.haskell.org/cabal/users-guide/installing-packages.html#developing-with-sandboxes
