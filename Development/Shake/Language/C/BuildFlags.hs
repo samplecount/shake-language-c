@@ -42,8 +42,8 @@ import           Data.List.Split
 import           Data.Maybe
 import           Development.Shake
 import           Development.Shake.Language.C.Language (Language(..))
-import           Development.Shake.Language.C.Util (concatMapFlag, words')
-import           Development.Shake.Language.C.Label (append, get, mkLabel)
+import           Development.Shake.Language.C.Util
+import           Development.Shake.Language.C.Label
 
 data BuildFlags = BuildFlags {
     _systemIncludes :: [FilePath]

@@ -19,11 +19,12 @@ module Development.Shake.Language.C.Rules (
   , loadableLibrary
 ) where
 
-import           Development.Shake
-import           Development.Shake.FilePath
-import           Development.Shake.Language.C.BuildFlags as BuildFlags
-import           Development.Shake.Language.C.ToolChain as ToolChain
-import           Development.Shake.Language.C.Label (get)
+import Data.Monoid (mempty)
+import Development.Shake
+import Development.Shake.FilePath
+import Development.Shake.Language.C.BuildFlags as BuildFlags
+import Development.Shake.Language.C.ToolChain as ToolChain
+import Development.Shake.Language.C.Label (get)
 
 mkObjectsDir :: FilePath -> FilePath
 mkObjectsDir path = takeDirectory path </> map tr (takeFileName path) ++ "_obj"

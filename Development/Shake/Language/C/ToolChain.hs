@@ -47,10 +47,10 @@ import           Data.List (isInfixOf)
 import           Development.Shake
 import           Development.Shake.FilePath
 import           Development.Shake.Util (needMakefileDependencies)
-import           Development.Shake.Language.C.Label ((:->), append, get, mkLabel, prepend, set)
-import           Development.Shake.Language.C.BuildFlags hiding (defaultBuildFlags)
+import           Development.Shake.Language.C.Label
+import           Development.Shake.Language.C.BuildFlags
 import           Development.Shake.Language.C.Language (languageOf)
-import           Development.Shake.Language.C.Util (concatMapFlag, mapFlag)
+import           Development.Shake.Language.C.Util
 
 data Linkage = Static | Shared deriving (Enum, Eq, Show)
 

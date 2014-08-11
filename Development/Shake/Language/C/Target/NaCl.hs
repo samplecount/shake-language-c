@@ -35,7 +35,7 @@ import           Data.Version (Version(..))
 import           Development.Shake.Language.C hiding (Arch)
 import qualified Development.Shake.Language.C as C
 import qualified Development.Shake.Language.C.Host as Host
-import           Development.Shake.Language.C.Label (append, get, set)
+import           Development.Shake.Language.C.Label
 
 pepper :: Int -> Version
 pepper apiVersion = Version [apiVersion] []

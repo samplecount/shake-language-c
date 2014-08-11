@@ -36,7 +36,7 @@ import           Data.Version (Version(..), showVersion)
 import           Development.Shake as Shake
 import           Development.Shake.FilePath
 import           Development.Shake.Language.C
-import           Development.Shake.Language.C.Label (append, get, prepend, set)
+import           Development.Shake.Language.C.Label
 import           System.Process (readProcess)
 import           Text.Read (readEither)
 

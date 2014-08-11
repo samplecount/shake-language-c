@@ -26,7 +26,7 @@ import           Control.Arrow
 import           Development.Shake.FilePath
 import           Data.Version (Version(..), showVersion)
 import           Development.Shake.Language.C
-import           Development.Shake.Language.C.Label (set, append)
+import           Development.Shake.Language.C.Label
 import qualified System.Info as System
 
 unsupportedArch :: Arch -> a
