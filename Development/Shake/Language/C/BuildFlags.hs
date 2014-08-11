@@ -16,7 +16,6 @@
 
 module Development.Shake.Language.C.BuildFlags (
     BuildFlags
-  , defaultBuildFlags
   , systemIncludes
   , userIncludes
   , defines

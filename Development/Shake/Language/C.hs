@@ -21,7 +21,7 @@ module Development.Shake.Language.C (
   , module Development.Shake.Language.C.Util
 ) where
 
-import Development.Shake.Language.C.BuildFlags hiding (defaultBuildFlags)
+import Development.Shake.Language.C.BuildFlags
 import Development.Shake.Language.C.Language
 import Development.Shake.Language.C.Rules
 import Development.Shake.Language.C.Target

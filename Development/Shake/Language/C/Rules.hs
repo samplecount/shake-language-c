@@ -55,7 +55,7 @@ buildProduct getLinker getToolChain result getBuildFlags getSources = do
     need objs
     (getLinker tc)
       tc
-      (flags BuildFlags.defaultBuildFlags)
+      (flags mempty)
       objs
       result
   (dropTrailingPathSeparator objectsDir ++ "//*.o") *> \obj -> do
@@ -69,7 +69,7 @@ buildProduct getLinker getToolChain result getBuildFlags getSources = do
                 (_, ext)    -> error $ "BUG: Unexpected object file extension " ++ ext
     (get compiler tc)
       tc
-      (flags BuildFlags.defaultBuildFlags)
+      (flags mempty)
       src
       obj
   return result
