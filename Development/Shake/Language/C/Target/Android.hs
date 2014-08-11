@@ -163,14 +163,12 @@ libcxx linkage ndk t =
                           -- NOTE: libcxx needs to be first in include path!
                           , stlPath </> "gabi++" </> "include"
                           , ndk </> "sources" </> "android" </> "support" </> "include" ]
+  . append compilerFlags [(Just Cpp, ["-stdlib=libc++"])]
   . append libraryPath [libcxxPath </> "libs" </> abi]
-  . append libraries [lib]
-  . append compilerFlags [(Just Cpp, flags)]
-  . append linkerFlags flags
+  . prepend libraries [lib]
     where stlPath = ndk </> "sources" </> "cxx-stl"
           libcxxPath = stlPath </> "llvm-libc++"
           abi = abiString (targetArch t)
           lib = case linkage of
-                  Static -> "libc++_static"
-                  Shared -> "libc++_shared"
-          flags = ["-stdlib=libc++"]
+                  Static -> "c++_static"
+                  Shared -> "c++_shared"
