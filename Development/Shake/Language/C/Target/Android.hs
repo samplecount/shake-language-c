@@ -115,12 +115,11 @@ toolChain ndk version (LLVM, tcVersion) t =
   $ set archiverCommand "llvm-ar"
   $ set linkerCommand "clang++"
   $ set defaultBuildFlags (return $
-        mkDefaultBuildFlags ndk version (targetArch t)
-      . append compilerFlags [
-            (Nothing, ["-target", llvmTarget t])
-          , (Nothing, [ "-gcc-toolchain"
-                      , ndk </> "toolchains/arm-linux-androideabi-4.8/prebuilt" </> osPrefix ])
-          ]
+    let gcc_toolchain = ndk </> "toolchains/arm-linux-androideabi-4.8/prebuilt" </> osPrefix
+        flags = ["-target", llvmTarget t, "-gcc-toolchain", gcc_toolchain]
+    in  mkDefaultBuildFlags ndk version (targetArch t)
+      . append compilerFlags [(Nothing, flags)]
+      . append linkerFlags flags
     )
   $ defaultToolChain
   where
