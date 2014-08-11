@@ -4,7 +4,7 @@
 
 ## Examples
 
-Here's an *iOS* example that compiles all `.cpp` files in the `src` directory to a static library `libexample.a` that can then be used e.g. from an `XCode` application project:
+Here's an *iOS* example that compiles all `.cpp` files in the `src` directory. The resulting static library `libexample.a` can then be used e.g. from an `XCode` project.
 
     import Control.Applicative
     import Control.Arrow
