@@ -53,7 +53,7 @@ The only prerequisite for running the script is installing the latest [Haskell p
           base == 4.*
         , shake
 
-If you're using `shake-language-c, add it to the dependencies as well. Refer to the [Cabal manual][cabal] for more information about configuration file features.
+If you're using `shake-language-c`, add it to the dependencies as well. Refer to the [Cabal manual][cabal] for more information about configuration file features.
 
 Now initialize the build system by running
 
