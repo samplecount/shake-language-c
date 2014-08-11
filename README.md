@@ -55,12 +55,8 @@ The only prerequisite for running the script is installing the latest [Haskell p
 
 If you're using `shake-language-c`, add it to the dependencies as well. Refer to the [Cabal manual][cabal] for more information about configuration file features.
 
-Now initialize the build system by running
-
-    ./shake .update
-
-This will create a [Cabal sandbox](http://www.haskell.org/cabal/users-guide/installing-packages.html#developing-with-sandboxes
-), install the dependencies and compile your build system script.
+`./shake .update` creates a [Cabal sandbox](http://www.haskell.org/cabal/users-guide/installing-packages.html#developing-with-sandboxes
+), installs the dependencies and compiles your build system script.
 
 Running `./shake` with any argument not starting with a `.` runs your build script with the arguments passed on the command line, usually Shake options and targets to build.
 
