@@ -31,7 +31,7 @@ Here's an *iOS* example that compiles all `.cpp` files in the `src` directory. T
 
       want [lib]
 
-A more complex [build script](https://github.com/samplecount/methcla/tree/develop/Shake_Methcla.hs) is used by the Methcla sound engine library. It defines Shake rules for building the library on various platforms and also exports functions for transparently including the library into other build systems. The build script makes extensive use of Shake [configuration files](https://github.com/samplecount/methcla/tree/develop/config).
+A more complex [build script](https://github.com/samplecount/methcla/tree/develop/Shake_Methcla.hs) is used by the [Methcla](http://methc.la) sound engine library. It defines Shake rules for building the library on various platforms and also exports functions for transparently including the library into other build systems. The build script makes extensive use of Shake [configuration files](https://github.com/samplecount/methcla/tree/develop/config).
 
 ## shake build script
 
