@@ -46,10 +46,10 @@ Library
     Development.Shake.Language.C.Target.NaCl
     Development.Shake.Language.C.Target.OSX
     Development.Shake.Language.C.Target.Windows
-    Development.Shake.Language.C.ToolChain
-    Development.Shake.Language.C.Util
   Other-Modules:
     Development.Shake.Language.C.Target
+    Development.Shake.Language.C.ToolChain
+    Development.Shake.Language.C.Util
   Ghc-Options: -Wall
   Build-Depends:
       base >= 4 && < 5
