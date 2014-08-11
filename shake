@@ -36,7 +36,7 @@ import qualified System.Process as Proc
 -- Cabal configuration fields:
 
 configFieldPackageDirs :: String
-configFieldPackageDirs = "x-stir-package-dirs"
+configFieldPackageDirs = "x-shake-package-dirs"
 
 -- Process utilities
 
