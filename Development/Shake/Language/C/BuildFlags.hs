@@ -30,8 +30,11 @@ module Development.Shake.Language.C.BuildFlags (
   , defineFlags
   , compilerFlagsFor
   , fromConfig
+  , (>>>=)
 ) where
 
+import           Control.Arrow
+import           Control.Monad
 import           Data.Monoid
 import           Data.List
 import           Data.List.Split
@@ -136,3 +139,7 @@ fromConfig getConfig = do
     define [k,v] = (k, Just v)
     define (k:vs) = (k, Just (intercalate "=" vs))
     defines' = map (define . splitOn "=") . flags
+
+-- | Utility function for composing functions in a monad.
+(>>>=) :: Monad m => m (a -> b) -> m (b -> c) -> m (a -> c)
+(>>>=) = liftM2 (>>>)
