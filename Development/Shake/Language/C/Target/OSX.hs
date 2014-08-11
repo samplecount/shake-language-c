@@ -77,8 +77,8 @@ platformSDKPath sdkRoot platform version =
       sdkDirectory sdkRoot platform
   </> platformName platform ++ showVersion version ++ ".sdk"
 
-getPlatformVersions :: Platform -> DeveloperPath -> Action [Version]
-getPlatformVersions platform (DeveloperPath sdkRoot) = do
+getPlatformVersionsWithRoot :: Platform -> DeveloperPath -> Action [Version]
+getPlatformVersionsWithRoot platform (DeveloperPath sdkRoot) = do
   dirs <- getDirectoryDirs (sdkDirectory sdkRoot platform)
   case mapMaybe (stripPrefix name) dirs of
     [] -> error $ "OSX: No SDK found for " ++ name
@@ -88,6 +88,10 @@ getPlatformVersions platform (DeveloperPath sdkRoot) = do
                  . dropExtension $ x
                  | x <- xs ]
   where name = platformName platform
+
+getPlatformVersions :: Platform -> Action [Version]
+getPlatformVersions platform =
+  getPlatformVersionsWithRoot platform =<< getSDKRoot
 
 -- | Get OSX system version (first two digits).
 systemVersion :: Action Version
