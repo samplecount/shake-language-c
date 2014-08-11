@@ -30,6 +30,8 @@ module Development.Shake.Language.C.BuildFlags (
   , compilerFlagsFor
   , fromConfig
   , (>>>=)
+  , append
+  , prepend
 ) where
 
 import           Control.Arrow
