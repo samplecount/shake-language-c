@@ -105,7 +105,7 @@ compilerFlagsFor lang = concat
           f l (Just l', x) | l == l' = Just x
                            | otherwise = Nothing
 
-fromConfig :: (String -> Action (Maybe String)) -> Action (BuildFlags -> BuildFlags)
+fromConfig :: (Functor m, Monad m) => (String -> m (Maybe String)) -> m (BuildFlags -> BuildFlags)
 fromConfig getConfig = do
   let parseConfig parser = fmap (maybe [] parser) . getConfig . ("BuildFlags."++)
 
