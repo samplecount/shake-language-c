@@ -36,14 +36,15 @@ module Development.Shake.Language.C.BuildFlags (
 
 import           Control.Arrow
 import           Control.Monad
+import           Data.Char (isSpace)
 import           Data.Monoid
 import           Data.List
 import           Data.List.Split
 import           Data.Maybe
 import           Development.Shake
 import           Development.Shake.Language.C.Language (Language(..))
-import           Development.Shake.Language.C.Util
 import           Development.Shake.Language.C.Label
+import           Development.Shake.Language.C.Util
 
 data BuildFlags = BuildFlags {
     _systemIncludes :: [FilePath]
@@ -133,8 +134,8 @@ fromConfig getConfig = do
           . append localLibraries    config_localLibraries
           . append archiverFlags     config_archiverFlags
   where
-    flags = words'
-    paths = words'
+    flags = words' . dropWhile isSpace
+    paths = words' . dropWhile isSpace
     define [] = error "Empty preprocessor definition"
     define [k] = (k, Nothing)
     define [k,v] = (k, Just v)
