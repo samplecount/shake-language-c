@@ -46,9 +46,9 @@ buildProduct getLinker getToolChain result getBuildFlags getSources = do
   cachedToolChain <- newCache $ \() -> getToolChain
   cachedBuildFlags <- newCache $ \() -> do
     tc <- cachedToolChain ()
-    f <- get ToolChain.defaultBuildFlags tc
-    g <- getBuildFlags
-    return $ g . f
+    f1 <- get ToolChain.defaultBuildFlags tc
+    f2 <- getBuildFlags
+    return $ f2 . f1 $ mempty
   result *> \_ -> do
     tc <- cachedToolChain ()
     flags <- cachedBuildFlags ()
@@ -56,7 +56,7 @@ buildProduct getLinker getToolChain result getBuildFlags getSources = do
     need objs
     (getLinker tc)
       tc
-      (flags mempty)
+      flags
       objs
       result
   (dropTrailingPathSeparator objectsDir ++ "//*.o") *> \obj -> do
@@ -70,7 +70,7 @@ buildProduct getLinker getToolChain result getBuildFlags getSources = do
                 (_, ext)    -> error $ "BUG: Unexpected object file extension " ++ ext
     (get compiler tc)
       tc
-      (flags mempty)
+      flags
       src
       obj
   return result
