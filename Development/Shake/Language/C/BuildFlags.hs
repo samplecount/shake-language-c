@@ -57,7 +57,7 @@ data BuildFlags = BuildFlags {
   -- This is needed for linking against local libraries built by shake (the linker `needs' its inputs).
   , _localLibraries :: [FilePath]
   , _archiverFlags :: [String]
-  } deriving (Show)
+  } deriving (Eq, Show)
 
 mkLabel ''BuildFlags
 
