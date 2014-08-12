@@ -41,7 +41,6 @@ import           Data.Monoid
 import           Data.List
 import           Data.List.Split
 import           Data.Maybe
-import           Development.Shake
 import           Development.Shake.Language.C.Language (Language(..))
 import           Development.Shake.Language.C.Label
 import           Development.Shake.Language.C.Util
