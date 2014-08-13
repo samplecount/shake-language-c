@@ -140,9 +140,11 @@ main = do
         --   "--disable-library-profiling"
         -- , "--disable-executable-profiling"
         ]
-      configure =
+      configure = do
+        putStrLn $ progName ++ ": Configuring build system ..."
         callProcess cabal $ ["configure"] ++ configureArgs
       initialize = do
+        putStrLn $ progName ++ ": Initializing build system ..."
         callProcess cabal ["sandbox", "init"]
         mapM_ (\dir -> callProcess cabal ["sandbox", "add-source", dir])
               (configPackageDirs config)
@@ -153,6 +155,8 @@ main = do
                             , j]
         configure
       update = do
+        putStrLn $ progName ++ ": Updating build system ..."
+
         sandboxExists <- Dir.doesDirectoryExist sandboxDir
         exeExists <- Dir.doesFileExist =<< getBuildCommand cabalFile pkg
 
