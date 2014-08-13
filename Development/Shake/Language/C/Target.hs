@@ -81,7 +81,10 @@ class ToBuildPrefix a where
 instance ToBuildPrefix Platform where
   toBuildPrefix = map toLower . platformName
 
+instance ToBuildPrefix Arch where
+  toBuildPrefix = archString
+
 instance ToBuildPrefix Target where
    toBuildPrefix target =
           toBuildPrefix (targetPlatform target)
-      </> archString (targetArch target)
+      </> toBuildPrefix (targetArch target)
