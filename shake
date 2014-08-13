@@ -118,7 +118,7 @@ configPackageDirs = maybe [] id
                   . lookup configFieldPackageDirs
 
 sandboxDir :: FilePath
-sandboxDir = ".cabal-sandboxDir"
+sandboxDir = ".cabal-sandbox"
 
 buildDir :: FilePath
 buildDir = "dist"
