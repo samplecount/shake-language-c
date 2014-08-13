@@ -147,7 +147,10 @@ main = do
         mapM_ (\dir -> callProcess cabal ["sandbox", "add-source", dir])
               (configPackageDirs config)
         callProcess cabal $ ["install"] ++ configureArgs ++
-                            ["--only-dependencies", "--disable-documentation", j]
+                            [ "--only-dependencies"
+                            , "--force-reinstalls"
+                            , "--disable-documentation"
+                            , j]
         configure
       update = do
         sandboxExists <- Dir.doesDirectoryExist sandboxDir
