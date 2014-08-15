@@ -39,17 +39,19 @@ module Development.Shake.Language.C.ToolChain (
   , toolFromString
   , tool
   , applyEnv
+  , toEnv
 ) where
 
 import           Control.Applicative
 import           Data.Char (toLower)
-import           Data.List (isInfixOf)
+import           Data.List (isInfixOf, isSuffixOf)
+import           Data.Monoid (mempty)
 import           Development.Shake
 import           Development.Shake.FilePath
 import           Development.Shake.Util (needMakefileDependencies)
 import           Development.Shake.Language.C.Label
 import           Development.Shake.Language.C.BuildFlags
-import           Development.Shake.Language.C.Language (languageOf)
+import           Development.Shake.Language.C.Language (Language(..), languageOf)
 import           Development.Shake.Language.C.Util
 
 data Linkage = Static | Shared deriving (Enum, Eq, Show)
@@ -172,3 +174,43 @@ applyEnv toolChain = do
          else if "clang" `isInfixOf` x
          then Just LLVM
          else Just Generic
+
+-- | Export a 'ToolChain' definition to a list of environment variable mappings, suitable e.g. for calling third-party configure scripts.
+--
+-- Needs some fleshing out; currently only works for "standard" binutil toolchains.
+toEnv :: ToolChain -> Action [(String,String)]
+toEnv tc = do
+  flags <- (\f -> f mempty) <$> get defaultBuildFlags tc
+  let cflags =  concatMapFlag "-I" (map escapeSpaces (get systemIncludes flags))
+             ++ concatMapFlag "-I" (map escapeSpaces (get userIncludes flags))
+             ++ defineFlags flags
+             ++ get preprocessorFlags flags
+             ++ compilerFlagsFor (Just C) flags
+      cxxflags = cflags ++ compilerFlagsFor (Just Cpp) flags
+      ldflags =  get linkerFlags flags
+              ++ concatMapFlag "-L" (get libraryPath flags)
+              ++ concatMapFlag "-l" (get libraries flags)
+      c2cxx path = let x = takeFileName path
+                   in if "gcc" `isSuffixOf` x
+                      then (++"g++") . reverse . drop 3 . reverse $ path
+                      else if "clang" `isSuffixOf` x
+                           then path ++ "++"
+                           else path
+  let cc = tool tc compilerCommand
+      cpp = toolFromString tc "cpp"
+  cppExists <- doesFileExist cpp
+  let cpp' = if cppExists then cpp else cc ++ " -E"
+  return $ [
+      ("CPP", cpp')
+    , ("AR", tool tc archiverCommand)
+    , ("NM", toolFromString tc "nm")
+    , ("CC", tool tc compilerCommand)
+    -- FIXME: Configure toolchain with compiler command per language?
+    , ("CXX", c2cxx $ tool tc compilerCommand)
+    , ("LD", toolFromString tc "ld")
+    , ("RANLIB", toolFromString tc "ranlib")
+    , ("CFLAGS", unwords cflags)
+    , ("CPPFLAGS", unwords cflags)
+    , ("CXXFLAGS", unwords cxxflags)
+    , ("LDFLAGS", unwords ldflags)
+    ]

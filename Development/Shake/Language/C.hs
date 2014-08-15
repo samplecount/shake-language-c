@@ -46,5 +46,6 @@ import Development.Shake.Language.C.ToolChain (
   , Linker
   , defaultLinker
   , applyEnv
+  , toEnv
   )
 import Development.Shake.Language.C.Util

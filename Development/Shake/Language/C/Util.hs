@@ -15,6 +15,7 @@
 module Development.Shake.Language.C.Util (
     mapFlag
   , concatMapFlag
+  , escapeSpaces
   , words'
 ) where
 
@@ -25,6 +26,13 @@ mapFlag f = concatMap (\x -> [f, x])
 
 concatMapFlag :: String -> [String] -> [String]
 concatMapFlag f = map (f++)
+
+-- | Escape spaces with '\\' character.
+escapeSpaces :: String -> String
+escapeSpaces [] = []
+escapeSpaces (' ':xs) = '\\' : ' ' : escapeSpaces xs
+escapeSpaces ('\\':xs) = '\\' : '\\' : escapeSpaces xs
+escapeSpaces (x:xs) = x : escapeSpaces xs
 
 -- | Splits a list of space separated strings.
 --
