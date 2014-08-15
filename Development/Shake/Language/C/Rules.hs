@@ -75,6 +75,10 @@ buildProduct getLinker getToolChain result getBuildFlags getSources = do
       obj
   return result
 
+-- TODO: The following result type would be more composable, e.g. allowing for further build product processing:
+-- Rules (FilePath -> Action ())
+-- See https://github.com/samplecount/shake-language-c/issues/15
+
 executable :: Action ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
 executable toolChain = buildProduct (flip (get linker) Executable) toolChain
 
