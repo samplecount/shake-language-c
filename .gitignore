@@ -1,0 +1,5 @@
+/.cabal-sandbox/
+/.shake.database
+/build/
+/cabal.sandbox.config
+/dist/
