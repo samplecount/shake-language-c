@@ -28,7 +28,6 @@ Build-Type: Simple
 
 Extra-Source-Files:
   README.md
-  shake
 
 Library
   Hs-Source-Dirs: .
