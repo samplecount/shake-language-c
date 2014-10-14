@@ -2,6 +2,8 @@
 
 **shake-language-c** is a cross-platform build system based on the [Shake](https://github.com/ndmitchell/shake) Haskell library. The focus is on cross-compilation of *C*, *C++* and *Objective C* source code to various target platforms. Currently supported target platforms are *iOS*, *Android NDK*, *Google Portable Native Client*, *MacOS X*, *Linux* and *Windows* (*MinGW*). Supported host platforms are *MacOS X*, *Linux* and *Windows*.
 
+Please see the [manual](/docs/Manual.md) for more documentation.
+
 ## Examples
 
 Here's an *iOS* example that compiles all `.cpp` files in the `src` directory. The resulting static library `libexample.a` can then be used e.g. from an `XCode` project.
