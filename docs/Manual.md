@@ -1,4 +1,4 @@
-# shake-language-c
+# Manual for shake-language-c
 
 These are the beginnings of a manual for the `shake-language-c` library. Feel free to [submit an issue](https://github.com/samplecount/shake-language-c/issues) for anything you want to see covered.
 
