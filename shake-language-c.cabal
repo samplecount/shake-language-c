@@ -58,3 +58,7 @@ Library
     , shake >= 0.10
     , split
     , unordered-containers
+
+Source-Repository head
+  Type:     git
+  Location: https://github.com/samplecount/shake-language-c.git
