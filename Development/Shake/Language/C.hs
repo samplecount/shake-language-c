@@ -12,13 +12,21 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+{-|
+Description: Build @C@ language projects for various target platforms
+-}
+
 module Development.Shake.Language.C (
-    module Development.Shake.Language.C.BuildFlags
-  , module Development.Shake.Language.C.Language
-  , module Development.Shake.Language.C.Rules
+  -- * High-level build rules
+    module Development.Shake.Language.C.Rules
+  , module Development.Shake.Language.C.BuildFlags
+  -- * Build targets
+  -- $targets
   , module Development.Shake.Language.C.Target
+  -- * Toolchains
   , module Development.Shake.Language.C.ToolChain
-  , module Development.Shake.Language.C.Util
+  -- * Source Languages
+  , module Development.Shake.Language.C.Language
 ) where
 
 import Development.Shake.Language.C.BuildFlags
@@ -48,4 +56,15 @@ import Development.Shake.Language.C.ToolChain (
   , applyEnv
   , toEnv
   )
-import Development.Shake.Language.C.Util
+
+{- $targets
+
+This library's focus is on cross compilation. Here's a list of modules that
+provide support for targeting specific platforms:
+
+ * "Development.Shake.Language.C.Target.Android"
+ * "Development.Shake.Language.C.Target.Linux"
+ * "Development.Shake.Language.C.Target.NaCl"
+ * "Development.Shake.Language.C.Target.OSX"
+ * "Development.Shake.Language.C.Target.Windows"
+-}

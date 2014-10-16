@@ -15,31 +15,40 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
 
+{-|
+Description: Types and functions for working with target tool chains
+-}
+
 module Development.Shake.Language.C.ToolChain (
     Linkage(..)
-  , LinkResult(..)
+    -- ** Working with toolchains
   , ToolChain
   , ToolChainVariant(..)
-  , defaultToolChain
-  , toolDirectory
-  , toolPrefix
-  , variant
-  , compilerCommand
-  , compiler
-  , archiverCommand
-  , archiver
-  , linkerCommand
-  , linker
-  , defaultBuildFlags
-  , defaultCompiler
+  , toolDirectory       -- | Directory prefix for tools in a `ToolChain`, e.g. @\/usr\/local\/linux-armv5-eabi\/bin@.
+  , toolPrefix          -- | Prefix string for tools in a `ToolChain`, e.g. @"linux-armv5-eabi-"@.
+  , variant             -- | Toolchain variant.
+  , compilerCommand     -- | Compiler command, usually used in the `compiler` action.
+  , Compiler
+  , compiler            -- | Compiler action for this `ToolChain`.
+  , archiverCommand     -- | Archiver command, usually used in the `archiver` action.
   , Archiver
-  , defaultArchiver
+  , archiver            -- | Archiver action for this `ToolChain`.
+  , linkerCommand       -- | Linker command, usually used in the `linker` action.
   , Linker
+  , LinkResult(..)
+  , linker              -- | Linker action for this `ToolChain`.
+  , defaultBuildFlags   -- | Action returning the default `BuildFlags` for this `ToolChain`.
+
+  -- ** Interfacing with other build systems
+  , applyEnv
+  , toEnv
+  -- ** Utilities for toolchain writers
+  , defaultToolChain
+  , defaultCompiler
+  , defaultArchiver
   , defaultLinker
   , toolFromString
   , tool
-  , applyEnv
-  , toEnv
 ) where
 
 import           Control.Applicative
@@ -54,22 +63,46 @@ import           Development.Shake.Language.C.BuildFlags
 import           Development.Shake.Language.C.Language (Language(..), languageOf)
 import           Development.Shake.Language.C.Util
 
+-- | Linkage type, static or shared.
 data Linkage = Static | Shared deriving (Enum, Eq, Show)
 
-data LinkResult = Executable
-                | SharedLibrary
-                | LoadableLibrary
-                deriving (Enum, Eq, Show)
+-- | Link result type
+data LinkResult =
+    Executable      -- ^ Executable
+  | SharedLibrary   -- ^ Shared (dynamically linked) library
+  | LoadableLibrary -- ^ Dynamically loadable library
+  deriving (Enum, Eq, Show)
 
+-- | Toolchain variant.
 data ToolChainVariant =
-    Generic
-  | GCC
-  | LLVM
+    Generic   -- ^ Unspecified toolchain
+  | GCC       -- ^ GNU Compiler Collection (gcc) toolchain
+  | LLVM      -- ^ Low-Level Virtual Machine (LLVM) toolchain
   deriving (Eq, Show)
 
-type Compiler = ToolChain -> BuildFlags -> FilePath -> FilePath -> Action ()
-type Linker   = ToolChain -> BuildFlags -> [FilePath] -> FilePath -> Action ()
-type Archiver = ToolChain -> BuildFlags -> [FilePath] -> FilePath -> Action ()
+-- | `Action` type for producing an object file from a source file.
+type Compiler =
+     ToolChain  -- ^ Toolchain
+  -> BuildFlags -- ^ Compiler flags
+  -> FilePath   -- ^ Input source file
+  -> FilePath   -- ^ Output object file
+  -> Action ()
+
+-- | `Action` type for linking object files into an executable or a library.
+type Linker   =
+     ToolChain  -- ^ Toolchain
+  -> BuildFlags -- ^ Linker flags
+  -> [FilePath] -- ^ Input object files
+  -> FilePath   -- ^ Output link product
+  -> Action ()
+
+-- | `Action` type for archiving object files into a static library.
+type Archiver =
+    ToolChain   -- ^ Toolchain
+ -> BuildFlags  -- ^ Archiver flags
+ -> [FilePath]  -- ^ Input object files
+ -> FilePath    -- ^ Output object archive (static library)
+ -> Action ()
 
 data ToolChain = ToolChain {
     _variant :: ToolChainVariant
@@ -86,6 +119,7 @@ data ToolChain = ToolChain {
 
 mkLabel ''ToolChain
 
+-- | Default compiler action.
 defaultCompiler :: Compiler
 defaultCompiler toolChain buildFlags input output = do
   need $ [input]
@@ -100,6 +134,7 @@ defaultCompiler toolChain buildFlags input output = do
     ++ ["-c", "-o", output, input]
   needMakefileDependencies depFile
 
+-- | Default archiver action.
 defaultArchiver :: Archiver
 defaultArchiver toolChain buildFlags inputs output = do
     need inputs
@@ -108,6 +143,7 @@ defaultArchiver toolChain buildFlags inputs output = do
         ++ [output]
         ++ inputs
 
+-- | Default linker action.
 defaultLinker :: Linker
 defaultLinker toolChain buildFlags inputs output = do
     let localLibs = get localLibraries buildFlags
@@ -126,6 +162,9 @@ defaultLinker toolChain buildFlags inputs output = do
       strip ('l':'i':'b':rest) = rest
       strip x = x
 
+-- | Default toolchain.
+--
+-- Probably not useful without modification.
 defaultToolChain :: ToolChain
 defaultToolChain =
     ToolChain {
@@ -144,19 +183,35 @@ defaultToolChain =
       , _defaultBuildFlags = return id
       }
 
-toolFromString :: ToolChain -> String -> FilePath
+-- | Given a tool chain command name, construct the command's full path, taking into account the toolchain's `toolPrefix`.
+toolFromString ::
+    ToolChain -- ^ Toolchain
+ -> String    -- ^ Command name
+ -> FilePath  -- ^ Full command path
 toolFromString toolChain name =
   let c = _toolPrefix toolChain ++ name
   in maybe c (</> c) (_toolDirectory toolChain)
 
--- | Get the full path of a predefined tool.
-tool :: ToolChain -> (ToolChain :-> String) -> FilePath
+-- | Construct the full path of a predefined tool given a `ToolChain` accessor.
+tool ::
+    ToolChain               -- ^ Toolchain
+ -> (ToolChain :-> String)  -- ^ Toolchain accessor
+ -> FilePath                -- ^ Full command path
 tool toolChain getter = toolFromString toolChain (get getter toolChain)
 
+-- | Apply the current environment and return a modified toolchain.
+--
+-- This function is experimental and subject to change!
+--
+-- Currently recognised environment variables are
+--
+--  [@CC@] Path to @C@ compiler.
+--
+--  [@SHAKE_TOOLCHAIN_VARIANT@] One of the values of 'ToolChainVariant' (case insensitive). If this variable is not present, an attempt is made to determine the toolchain variant from the @C@ compiler command.
 applyEnv :: ToolChain -> Action ToolChain
 applyEnv toolChain = do
   cc <- getEnv "CC"
-  vendor <- getEnv "STIR_TOOLCHAIN_VENDOR"
+  vendor <- getEnv "SHAKE_TOOLCHAIN_VARIANT"
   return $ maybe id (set compilerCommand) cc
          . maybe id (set variant) ((vendor >>= parseVendor) <|> (cc >>= vendorFromCommand))
          $ toolChain
@@ -175,7 +230,7 @@ applyEnv toolChain = do
          then Just LLVM
          else Just Generic
 
--- | Export a 'ToolChain' definition to a list of environment variable mappings, suitable e.g. for calling third-party configure scripts.
+-- | Export a 'ToolChain' definition to a list of environment variable mappings, suitable e.g. for calling third-party configure scripts in cross-compilation mode.
 --
 -- Needs some fleshing out; currently only works for "standard" binutil toolchains.
 toEnv :: ToolChain -> Action [(String,String)]

@@ -12,6 +12,17 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+{-|
+Description: Toolchain definitions and utilities for Linux
+
+This module provides toolchain definitions and utilities for targeting Linux.
+See "Development.Shake.Language.C.Rules" for examples of how to use a target
+toolchain.
+
+Linux is also a supported host operating system, see
+"Development.Shake.Language.C.Host" for examples of how to target the host.
+-}
+
 module Development.Shake.Language.C.Target.Linux (
     toolChain
   , getDefaultToolChain
@@ -46,6 +57,7 @@ platformArchiver tc buildFlags inputs output = do
       ++ inputs
     command_ [] (toolFromString tc "ranlib") [output]
 
+-- | Linux toolchain.
 toolChain :: ToolChainVariant -> ToolChain
 toolChain GCC =
     set variant GCC

@@ -12,6 +12,20 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+{-|
+Description: Toolchain definitions and utilities for Windows
+
+This module provides toolchain definitions and utilities for targeting Windows.
+See "Development.Shake.Language.C.Rules" for examples of how to use a target
+toolchain.
+
+Windows is also a supported host operating system, see
+"Development.Shake.Language.C.Host" for examples of how to target the host.
+
+On Windows currently only the <http://www.mingw.org/ MinGW> toolchain is
+supported.
+-}
+
 module Development.Shake.Language.C.Target.Windows (
     toolChain
   , getDefaultToolChain
@@ -37,6 +51,7 @@ getHostArch = do
 target :: Arch -> Target
 target = Target Windows (Platform "windows")
 
+-- | Windows toolchain.
 toolChain :: ToolChainVariant -> ToolChain
 toolChain GCC =
     set variant GCC

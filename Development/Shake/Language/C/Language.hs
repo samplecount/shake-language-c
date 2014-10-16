@@ -22,9 +22,17 @@ module Development.Shake.Language.C.Language (
 
 import Development.Shake.FilePath (takeExtension)
 
-data Language = C | Cpp | ObjC | ObjCpp
-                 deriving (Enum, Eq, Show)
+-- | Source language.
+--
+-- Currently something derived from @C@.
+data Language =
+    C       -- ^ Plain old C
+  | Cpp     -- ^ C++
+  | ObjC    -- ^ Objective-C
+  | ObjCpp  -- ^ Objective-C with C++ (Apple extension)
+  deriving (Enum, Eq, Show)
 
+-- | Default mapping from file extension to source language.
 defaultLanguageMap :: [(String, Language)]
 defaultLanguageMap = concatMap f [
     (C, [".c"])
@@ -34,5 +42,6 @@ defaultLanguageMap = concatMap f [
   ]
   where f (lang, exts) = map (\ext -> (ext, lang)) exts
 
+-- | Determine the source language of a file based on its extension.
 languageOf :: FilePath -> Maybe Language
 languageOf = flip lookup defaultLanguageMap . takeExtension

@@ -12,6 +12,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+{-|
+Description: Toolchain definitions and utilities for Android
+
+This module provides toolchain definitions and utilities for targeting Android.
+See "Development.Shake.Language.C.Rules" for examples of how to use a target
+toolchain.
+-}
 module Development.Shake.Language.C.Target.Android (
     target
   , sdkVersion
@@ -48,6 +55,7 @@ osPrefix = System.os ++ "-" ++ cpu
                     "i386" -> "x86"
                     arch   -> arch
 
+-- | Android target for architecture.
 target :: Arch -> Target
 target = Target Android (Platform "android")
 
@@ -86,10 +94,18 @@ mkDefaultBuildFlags ndk version arch =
     archLinkerFlags (Arm Armv7)   = ["-Wl,--fix-cortex-a8"]
     archLinkerFlags _             = []
 
+-- | Construct a version record from an integral Android SDK version.
+--
+-- prop> sdkVersion 19 == Version [19] []
 sdkVersion :: Int -> Version
 sdkVersion n = Version [n] []
 
-toolChain :: FilePath -> Version -> (ToolChainVariant, Version) -> Target -> ToolChain
+-- | Construct an Android toolchain.
+toolChain :: FilePath                     -- ^ NDK source directory
+          -> Version                      -- ^ SDK version, see `sdkVersion`
+          -> (ToolChainVariant, Version)  -- ^ Toolchain variant and version
+          -> Target                       -- ^ Build target, see `target`
+          -> ToolChain                    -- ^ Resulting toolchain
 toolChain "" _ (_, _) _ = error "Empty NDK directory"
 toolChain ndk version (GCC, tcVersion) t =
     set variant GCC
@@ -130,10 +146,11 @@ toolChain ndk version (LLVM, tcVersion) t =
         X86 I386  -> "i686-none-linux-android"
         arch      -> unsupportedArch arch
 toolChain _ _ (tcVariant, tcVersion) _ =
-  error $ "Unknown tool chain variant "
+  error $ "Unknown toolchain variant "
         ++ show tcVariant ++ " "
         ++ showVersion tcVersion
 
+-- | Valid Android ABI identifier for the given architecture.
 abiString :: Arch -> String
 abiString (Arm Armv5) = "armeabi"
 abiString (Arm Armv6) = "armeabi"
@@ -141,12 +158,19 @@ abiString (Arm Armv7) = "armeabi-v7a"
 abiString (X86 _)     = "x86"
 abiString arch        = unsupportedArch arch
 
-native_app_glue :: FilePath -> ([FilePath], BuildFlags -> BuildFlags)
+-- | Source paths and build flags for the @native_app_glue@ module.
+native_app_glue :: FilePath -- ^ NDK source directory
+                -> ([FilePath], BuildFlags -> BuildFlags)
 native_app_glue ndk =
   ( [ndk </> "sources/android/native_app_glue/android_native_app_glue.c"]
   , append systemIncludes [ndk </> "sources/android/native_app_glue"] )
 
-gnustl :: Version -> Linkage -> FilePath -> Target -> BuildFlags -> BuildFlags
+-- | Build flags for building with and linking against the GNU @gnustl@ standard C++ library.
+gnustl :: Version                     -- ^ GNU STL version
+       -> Linkage                     -- ^ `Static` or `Shared`
+       -> FilePath                    -- ^ NDK source directory
+       -> Target                      -- ^ Build target, see `target`
+       -> (BuildFlags -> BuildFlags)  -- ^ 'BuildFlags' modification function
 gnustl version linkage ndk t =
     append systemIncludes [stlPath </> "include", stlPath </> "libs" </> abi </> "include"]
   . append libraryPath [stlPath </> "libs" </> abi]
@@ -157,7 +181,11 @@ gnustl version linkage ndk t =
                   Static -> "gnustl_static"
                   Shared -> "gnustl_shared"
 
-libcxx :: Linkage -> FilePath -> Target -> BuildFlags -> BuildFlags
+-- | Build flags for building with and linking against the LLVM @libc++@ standard C++ library.
+libcxx :: Linkage                     -- ^ `Static` or `Shared`
+       -> FilePath                    -- ^ NDK source directory
+       -> Target                      -- ^ Build target, see `target`
+       -> (BuildFlags -> BuildFlags)  -- ^ 'BuildFlags' modification function
 libcxx linkage ndk t =
     append systemIncludes [ libcxxPath </> "libcxx" </> "include"
                           -- NOTE: libcxx needs to be first in include path!

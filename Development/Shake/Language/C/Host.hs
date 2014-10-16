@@ -12,6 +12,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+{-|
+Description: Toolchain definitions and utilities for host platform
+-}
 module Development.Shake.Language.C.Host (
     OS(..)
   , os
@@ -69,7 +72,9 @@ loadableLibraryExtension =
     OSX     -> "bundle"
     Windows -> "dll"
 
--- | Get host's default tool chain.
+-- | Get host's default toolchain.
+--
+-- This function can be used for targeting the host operating system, see also "Development.Shake.Language.C.Rules".
 defaultToolChain :: (Target, Action ToolChain)
 {-# NOINLINE defaultToolChain #-}
 defaultToolChain = unsafePerformIO $ do

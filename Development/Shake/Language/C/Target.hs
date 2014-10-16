@@ -15,10 +15,10 @@
 module Development.Shake.Language.C.Target (
     OS(..)
   , Platform(..)
-  , Arch(..)
-  , archString
   , ArmVersion(..)
   , X86Version(..)
+  , Arch(..)
+  , archString
   , Target(..)
   , ToBuildPrefix(..)
 ) where
@@ -26,24 +26,30 @@ module Development.Shake.Language.C.Target (
 import           Data.Char (toLower)
 import           Development.Shake.FilePath
 
+-- | Target operating system.
 data OS =
-    Android
-  | Linux
-  | OSX
-  | Pepper
-  | Windows
+    Android -- ^ Google Android
+  | Linux   -- ^ GNU Linux
+  | OSX     -- ^ Apple Mac OSX and iOS
+  | Pepper  -- ^ Google Portable Native Client (PNaCl)
+  | Windows -- ^ Microsoft Windows
   deriving (Eq, Ord, Show)
 
+-- | Target platform.
+--
+-- Basically just a platform identifier string.
 data Platform = Platform {
     platformName :: String
   } deriving (Eq, Show)
 
+-- | `X86` architecture version.
 data X86Version =
-    I386
-  | I686
-  | X86_64
+    I386    -- ^ @i386@, 32-bit architecture without @SSE@
+  | I686    -- ^ @i686@, 32-bit architecture with @SSE@ (/Pentium-Pro/)
+  | X86_64  -- ^ @x86_64@, 64-bit architecture
   deriving (Eq, Show)
 
+-- | `Arm` architecture version.
 data ArmVersion =
     Armv5
   | Armv6
@@ -51,12 +57,16 @@ data ArmVersion =
   | Armv7s
   deriving (Eq, Show)
 
+-- | Target architecture.
 data Arch =
-    X86 X86Version
-  | Arm ArmVersion
-  | LLVM_IR
+    X86 X86Version  -- ^ Intel @x86@ architecture
+  | Arm ArmVersion  -- ^ Arm architecture
+  | LLVM_IR         -- ^ LLVM intermediate representation, used by `Pepper` (PNaCl)
   deriving (Eq, Show)
 
+-- | Architecture short string.
+--
+-- Mainly useful for constructing build output directories.
 archString :: Arch -> String
 archString arch =
   case arch of
@@ -69,12 +79,16 @@ archString arch =
     Arm Armv7s -> "armv7s"
     LLVM_IR    -> "llvm_ir"
 
+-- | Compilation target triple consisting of operating system, platform and architecture.
 data Target = Target {
-    targetOS :: OS
-  , targetPlatform :: Platform
-  , targetArch :: Arch
+    targetOS :: OS              -- ^ Target operating system
+  , targetPlatform :: Platform  -- ^ Target platform
+  , targetArch :: Arch          -- ^ Target architecture
   } deriving (Show)
 
+-- | Convert a value to a build directory prefix.
+--
+-- The idea is that several such values can be combined to form more complex build directory hierarchies. This can be important for disambiguating build product paths in Shake rules.
 class ToBuildPrefix a where
   toBuildPrefix :: a -> FilePath
 

@@ -12,6 +12,17 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+{-|
+Description: Toolchain definitions and utilities for OSX and iOS
+
+This module provides toolchain definitions and utilities for targeting OSX
+and iOS. See "Development.Shake.Language.C.Rules" for examples of how to use a
+target toolchain.
+
+OSX is also a supported host operating system, see
+"Development.Shake.Language.C.Host" for examples of how to target the host.
+-}
+
 module Development.Shake.Language.C.Target.OSX (
     DeveloperPath
   , getSDKRoot
@@ -45,6 +56,7 @@ import           Text.Read (readEither)
 archFlags :: Target -> [String]
 archFlags t = ["-arch", archString (targetArch t)]
 
+-- | Base path of development tools on OSX.
 newtype DeveloperPath = DeveloperPath FilePath
                         deriving (Show)
 
@@ -54,15 +66,19 @@ getSDKRoot = liftIO $
   (DeveloperPath . head . splitOn "\n")
     <$> readProcess "xcode-select" ["--print-path"] ""
 
+-- | Mac OSX platform.
 macOSX :: Platform
 macOSX = Platform "MacOSX"
 
+-- | iOS platform.
 iPhoneOS :: Platform
 iPhoneOS = Platform "iPhoneOS"
 
+-- | iOS simulator platform.
 iPhoneSimulator :: Platform
 iPhoneSimulator = Platform "iPhoneSimulator"
 
+-- | Build target given a platform and an architecture.
 target :: Platform -> Arch -> Target
 target = Target OSX
 
@@ -91,6 +107,11 @@ getPlatformVersionsWithRoot platform (DeveloperPath sdkRoot) = do
                  | x <- xs ]
   where name = platformName platform
 
+-- | Return a list of available platform SDK versions.
+--
+-- For example in order to get the latest iOS SDK version:
+--
+-- > maximum <$> getPlatformVersions iPhoneOS
 getPlatformVersions :: Platform -> Action [Version]
 getPlatformVersions platform =
   getPlatformVersionsWithRoot platform =<< getSDKRoot
@@ -111,10 +132,15 @@ getDefaultToolChain = do
                <*> systemVersion
                <*> pure defaultTarget )
 
+-- | SDK version given major and minor version numbers.
 sdkVersion :: Int -> Int -> Version
 sdkVersion major minor = Version [major, minor] []
 
-toolChain :: DeveloperPath -> Version -> Target -> ToolChain
+-- | Construct an OSX or iOS toolchain.
+toolChain :: DeveloperPath  -- ^ Developer tools base path, see `getSDKRoot`
+          -> Version        -- ^ Target SDK version
+          -> Target         -- ^ Build target, see `target`
+          -> ToolChain      -- ^ Resulting toolchain
 toolChain (DeveloperPath sdkRoot) version t =
     set variant LLVM
   $ set toolDirectory (Just (sdkRoot </> "Toolchains/XcodeDefault.xctoolchain/usr/bin"))
@@ -143,15 +169,22 @@ toolChain (DeveloperPath sdkRoot) version t =
   $ defaultToolChain
   where sysRoot = platformSDKPath sdkRoot (targetPlatform t) version
 
+-- | Specify the @-mmacosx-version-min@ compiler flag.
 macosx_version_min :: Version -> BuildFlags -> BuildFlags
 macosx_version_min version =
   append compilerFlags [(Nothing, ["-mmacosx-version-min=" ++ showVersion version])]
 
+-- | Specify the @-miphoneos-version-min@ compiler flag.
 iphoneos_version_min :: Version -> BuildFlags -> BuildFlags
 iphoneos_version_min version =
   append compilerFlags [(Nothing, ["-miphoneos-version-min=" ++ showVersion version])]
 
-universalBinary :: [FilePath] -> FilePath -> Action ()
+-- | Create a universal binary a list of input files.
+--
+-- Calls <http://www.manpages.info/macosx/lipo.1.html lipo> with the @-create@ option.
+universalBinary :: [FilePath] -- ^ Input files, can be executables, dynamic libraries or static archives but should be all of the same type
+                -> FilePath   -- ^ Output file path
+                -> Action ()
 universalBinary inputs output = do
   need inputs
   command_ [] "lipo" $ ["-create", "-output", output] ++ inputs

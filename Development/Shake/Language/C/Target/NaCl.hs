@@ -12,6 +12,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+{-|
+Description: Toolchain definitions and utilities for Google Pepper and Portable Native Client
+
+This module provides toolchain definitions and utilities for targeting Google
+Pepper and Portable Native Client (PNaCl). Arguably it should be renamed
+appropriately. See "Development.Shake.Language.C.Rules" for examples of how to
+use a target toolchain.
+-}
 module Development.Shake.Language.C.Target.NaCl (
     pepper
   , canary
@@ -38,12 +46,17 @@ import           Development.Shake.Language.C.ToolChain
 import qualified Development.Shake.Language.C.Host as Host
 import           Development.Shake.Language.C.Label
 
+-- | Stable /Pepper/ API version.
 pepper :: Int -> Version
 pepper apiVersion = Version [apiVersion] []
 
+-- | Unstable /Pepper Canary/ API version.
 canary :: Version
 canary = Version [] ["canary"]
 
+-- | Pepper target.
+--
+-- `LLVM_IR` (PNaCl) is the only supported target architecture at the moment.
 target :: Target
 target = Target Pepper (Platform "pepper") LLVM_IR
 
@@ -54,9 +67,17 @@ hostString =
     Host.OSX     -> "mac"
     Host.Windows -> "win"
 
+-- | Pepper build configuration.
+--
+-- This is used to select the respective library versions when linking.
 data Config = Debug | Release deriving (Eq, Show)
 
-toolChain :: FilePath -> Version -> Config -> Target -> ToolChain
+-- | Construct Pepper toolchain.
+toolChain :: FilePath   -- ^ Pepper SDK directory (@nacl_sdk@)
+          -> Version    -- ^ Pepper API version, see `pepper` and `canary`
+          -> Config     -- ^ Build configuration for linked libraries
+          -> Target     -- ^ Target, see `target`
+          -> ToolChain  -- ^ Resulting toolchain
 toolChain sdk sdkVersion config t =
     set variant LLVM
   $ set toolDirectory (Just (platformDir </> "toolchain" </> hostString ++ "_" ++ "pnacl" </> "bin"))
@@ -91,7 +112,10 @@ toolChain sdk sdkVersion config t =
     includeDir = platformDir </> "include"
 
 -- | Finalize a bit code executable.
-finalize :: ToolChain -> FilePath -> FilePath -> Action ()
+finalize :: ToolChain -- ^ Toolchain, see `toolChain`
+         -> FilePath  -- ^ Bit code input executable
+         -> FilePath  -- ^ Finalised bit code output executable
+         -> Action ()
 finalize tc input output = do
   need [input]
   command_ [] (toolFromString tc "finalize")
@@ -118,7 +142,7 @@ libppapi = append libraries ["ppapi"]
 libppapi_cpp :: BuildFlags -> BuildFlags
 libppapi_cpp = append libraries ["ppapi_cpp"]
 
--- | Link against libnacl_io.
+-- | Link against @libnacl_io@.
 libnacl_io :: BuildFlags -> BuildFlags
 libnacl_io = append libraries ["nacl_io"]
 
@@ -126,12 +150,18 @@ libnacl_io = append libraries ["nacl_io"]
 libppapi_simple :: BuildFlags -> BuildFlags
 libppapi_simple = append libraries ["ppapi_simple"]
 
+-- | Pepper target architecture
 data Arch =
-    PNaCl
-  | NaCl C.Arch
+    PNaCl       -- ^ Portable Native Client architecture
+  | NaCl C.Arch -- ^ Native Client architecture for specific CPU architecture
   deriving (Eq, Show)
 
-mk_nmf :: [(Arch, FilePath)] -> FilePath -> Action ()
+-- | Create Native Client Manifest (nmf) file.
+--
+-- This file is needed for serving NaCl/PNaCl outside the Google Play store. See the native client <https://developer.chrome.com/native-client/reference/nacl-manifest-format documentation> for more information on the file format.
+mk_nmf :: [(Arch, FilePath)]  -- ^ List of executables with the corresponding architecture
+       -> FilePath            -- ^ Output file
+       -> Action ()
 mk_nmf inputs output = do
   need $ map snd inputs
   writeFileLines output $ [

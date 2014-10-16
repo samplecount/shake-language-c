@@ -34,7 +34,7 @@ escapeSpaces (' ':xs) = '\\' : ' ' : escapeSpaces xs
 escapeSpaces ('\\':xs) = '\\' : '\\' : escapeSpaces xs
 escapeSpaces (x:xs) = x : escapeSpaces xs
 
--- | Splits a list of space separated strings.
+-- | Split a list of space separated strings.
 --
 -- Spaces can be escaped by '\\'.
 words' :: String -> [String]

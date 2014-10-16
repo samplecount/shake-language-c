@@ -14,6 +14,12 @@
 
 {-# LANGUAGE TypeOperators #-}
 
+{-|
+Description: Lens utilities
+
+This module provides some lens utilities and also re-exports "Data.Label",
+which can avoid a package dependency on @fclabels@ in some cases.
+-}
 module Development.Shake.Language.C.Label (
     module Data.Label
   , append
@@ -23,8 +29,18 @@ module Development.Shake.Language.C.Label (
 import Data.Label
 import Data.Monoid (Monoid, mappend)
 
-append :: Monoid a => (f :-> a) -> a -> f -> f
+-- | Append stuff to the 'Monoid' in record field specified by lens.
+append :: Monoid a =>
+     (f :-> a) -- ^ lens
+  -> a -- ^ stuff to append
+  -> f -- ^ original record
+  -> f -- ^ modified record
 append l n = modify l (`mappend` n)
 
-prepend :: Monoid a => (f :-> a) -> a -> f -> f
+-- | Prepend stuff to the 'Monoid' in record field specified by lens.
+prepend :: Monoid a =>
+     (f :-> a) -- ^ lens
+  -> a -- ^ stuff to prepend
+  -> f -- ^ original record
+  -> f -- ^ modified record
 prepend l n = modify l (n `mappend`)

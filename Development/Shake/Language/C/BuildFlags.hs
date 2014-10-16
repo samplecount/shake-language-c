@@ -14,18 +14,28 @@
 
 {-# LANGUAGE TemplateHaskell #-}
 
+{-|
+Description: Build flags record for building @C@ language projects
+
+The `BuildFlags` record is an abstraction for various toolchain flags for
+building executables and libraries from source files in a @C@-based language.
+It's intended to be toolchain-independent, but currently there's certainly a
+bias towards binutils\/gcc/clang toolchains.
+-}
+
 module Development.Shake.Language.C.BuildFlags (
     BuildFlags
-  , systemIncludes
-  , userIncludes
-  , defines
-  , preprocessorFlags
-  , compilerFlags
-  , libraryPath
-  , libraries
-  , linkerFlags
-  , localLibraries
-  , archiverFlags
+    -- Poor man's documentation for TH generated functions.
+  , systemIncludes -- | System include directories, referenced by @#include \<...\>@ in code and usually passed to the compiler with the @-I@ flag.
+  , userIncludes -- | User include directories, referenced by @#include "..."@ in code and usually passed to the compiler with the @-iquote@ flag.
+  , defines -- | Preprocessor defines, a list of pairs of names with or without a value.
+  , preprocessorFlags -- | Other preprocessor flags.
+  , compilerFlags -- | Compiler flags, either generic ones or for a specific source 'Language'.
+  , libraryPath -- | Linker search path for libraries.
+  , libraries -- | List of libraries to link against. Note that you should use the library name without the @lib@ prefix and without extension.
+  , linkerFlags -- | Flags passed to the linker.
+  , localLibraries -- | Locally built static libraries to be linked against. See also the corresponding section in the <https://github.com/samplecount/shake-language-c/blob/master/docs/Manual.md#locally-built-libraries manual>.
+  , archiverFlags -- | Flags passed to the object archiver.
   , defineFlags
   , compilerFlagsFor
   , fromConfig
@@ -45,6 +55,40 @@ import           Development.Shake.Language.C.Language (Language(..))
 import           Development.Shake.Language.C.Label
 import           Development.Shake.Language.C.Util
 
+{-| Record type for abstracting various toolchain command line flags.
+
+`BuildFlags` is an instance `Monoid`, you can create a default record with
+`mempty` and append flags with `mappend`.
+
+Record accessors are 'Data.Label.Mono.Lens' es from the
+<https://hackage.haskell.org/package/fclabels fclabels> package, which
+makes accessing and modifying record fields a bit more convenient.
+@fclabels@ was chosen over <https://hackage.haskell.org/package/lens lens>
+because it has far fewer dependencies, which is convenient when installing
+the Shake build system in a per-project cabal sandbox. We might switch to
+@lens@ when it gets included in the Haskell platform.
+
+There are two convenience functions for working with `BuildFlags` record fields
+containing lists of flags, `append` and `prepend`. Since most combinators in
+this library expect a function @BuildFlags -> BuildFlags@, the following is a
+common idiom:
+
+@
+buildFlags . append `systemIncludes` ["path"]
+@
+
+Note that when modifying the same record field, order of function composition
+matters and you might want to use the arrow combinator '>>>' for appending in
+source statement order:
+
+>>> get systemIncludes \
+     $ buildFlags >>> append systemIncludes ["path1"] >>> append systemIncludes ["path2"] \
+     $ mempty
+["path1", "path2"]
+
+See "Development.Shake.Language.C.Rules" for how to use 'BuildFlags' in build
+product rules.
+-}
 data BuildFlags = BuildFlags {
     _systemIncludes :: [FilePath]
   , _userIncludes :: [FilePath]
@@ -91,11 +135,13 @@ instance Monoid BuildFlags where
     . append archiverFlags     (get archiverFlags a)
     $ b
 
+-- | Construct preprocessor flags from the 'defines' field of 'BuildFlags'.
 defineFlags :: BuildFlags -> [String]
 defineFlags = concatMapFlag "-D"
             . map (\(a, b) -> maybe a (\b' -> a++"="++b') b)
             . get defines
 
+-- | Return a list of compiler flags for a specific source language.
 compilerFlagsFor :: Maybe Language -> BuildFlags -> [String]
 compilerFlagsFor lang = concat
                       . maybe (map snd . filter (isNothing.fst))
@@ -105,6 +151,9 @@ compilerFlagsFor lang = concat
           f l (Just l', x) | l == l' = Just x
                            | otherwise = Nothing
 
+-- | Construct a 'BuildFlags' modifier function from a config file.
+--
+-- See also "Development.Shake.Language.C.Config".
 fromConfig :: (Functor m, Monad m) => (String -> m (Maybe String)) -> m (BuildFlags -> BuildFlags)
 fromConfig getConfig = do
   let parseConfig parser = fmap (maybe [] parser) . getConfig . ("BuildFlags."++)

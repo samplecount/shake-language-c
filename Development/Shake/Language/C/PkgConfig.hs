@@ -12,6 +12,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+{-|
+Description: Query build flags with @pkg-config@
+
+This module provides utilities for querying 'BuildFlags' from the
+<http://www.freedesktop.org/wiki/Software/pkg-config/ pkg-config> database,
+which is available on many Unix like operating systems.
+-}
 module Development.Shake.Language.C.PkgConfig (
     Options(..)
   , defaultOptions
@@ -61,17 +68,22 @@ parseLibs (x:xs)
 parseFlags :: String -> [String]
 parseFlags = words' . head . lines
 
+-- | PkgConfig options.
 data Options = Options {
-    searchPath :: Maybe [FilePath]
-  , static :: Bool
+    searchPath :: Maybe [FilePath] -- ^ List of directories where @.pc@ files are searched, corresponding to the @PKG_CONFIG_PATH@ environment variable
+  , static :: Bool -- ^ Return flags appropriate for static linking
   } deriving (Eq, Show)
 
+-- | Default options.
 defaultOptions :: Options
 defaultOptions = Options {
     searchPath = Nothing
   , static = False
   }
 
+-- | Call @pkg-config@ with options and a package name and return a 'BuildFlags' modification function.
+--
+-- The @pkg-config@ executable must be installed on the build host.
 pkgConfigWithOptions :: Options -> String -> Action (BuildFlags -> BuildFlags)
 pkgConfigWithOptions options pkg = do
   env <- case searchPath options of
@@ -86,9 +98,19 @@ pkgConfigWithOptions options pkg = do
   return (  parseCflags (parseFlags cflags)
           . parseLibs (parseFlags libs) )
 
+-- | Call @pkg-config@ with default options and a package name and return a 'BuildFlags' modification function.
+--
+-- The @pkg-config@ executable must be installed on the build host.
 pkgConfig :: String -> Action (BuildFlags -> BuildFlags)
 pkgConfig = pkgConfigWithOptions defaultOptions
 
+-- | Given an initial 'Options' record and a configuration variable lookup function, call @pkg-config@ based on configuration variable settings and return a 'BuildFlags' modification function.
+--
+-- The following configuration variables are recognised:
+--
+--   [@PkgConfig.packages@] List of package names for which build flags should be queried
+--   [@PkgConfig.options.searchPath@] Space-separated list of file paths, corresponds to the `searchPath` option
+--   [@PkgConfig.options.static@] @true@ or @false@, corresponds to the `static` option
 fromConfigWithOptions :: Options -> (String -> Action (Maybe String)) -> Action (BuildFlags -> BuildFlags)
 fromConfigWithOptions initialOptions cfg = do
   config_searchPath <- fmap words' <$> cfg "PkgConfig.options.searchPath"
@@ -105,5 +127,6 @@ fromConfigWithOptions initialOptions cfg = do
     bool (x:_) = map toLower x == "true"
     bool _ = False
 
+-- | Like `fromConfigWithOptions` but with default options.
 fromConfig :: (String -> Action (Maybe String)) -> Action (BuildFlags -> BuildFlags)
 fromConfig = fromConfigWithOptions defaultOptions

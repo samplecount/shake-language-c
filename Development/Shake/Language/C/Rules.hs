@@ -12,6 +12,48 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+{-|
+Description: High-level Shake rules
+
+This module provides a few high-level rules for building executables and
+libraries. Below is an example that builds both a static library and an executable. See
+"Development.Shake.Language.C.ToolChain" for examples of toolchain definitions.
+
+> let toolChain = ...
+> lib <- staticLibrary toolChain "libexample.a" (pure mempty) (pure ["example_lib.c"])
+> exe <- staticLibrary toolChain ("example" <.> exe) (pure mempty) (pure ["example_exe.c"])
+> want [lib, exe]
+
+Sometimes you want to structure your project in a set of static libraries that
+are later linked into one or more executables. For Shake to recognise the
+libraries as dependencies of the executable you need to add them to the
+`localLibraries` field of the `BuildFlags` record:
+
+> let toolChain = ...
+>     buildFlags = ...
+> lib <- staticLibrary toolChain "libexample.a"
+>         (pure buildFlags)
+>         (pure ["example_lib.c"])
+> exe <- executable toolChain ("example" <.> exe)
+>         (pure $ buildFlags . append localLibraries [lib])
+>         (pure ["example_exe.c"])
+> want [exe]
+
+The rule functions expect their arguments in the 'Action' monad in order to be
+able to derive them from side-effecting configuration actions. For example it
+can be useful to determine certain toolchain settings either from the
+environment, or from configuration files. Using "Control.Applicative" we could
+write:
+
+> Android.toolChain
+>   <$> getEnvWithDefault
+>         (error "ANDROID_NDK is undefined")
+>         "ANDROID_NDK"
+>   <*> pure (Android.sdkVersion 9)
+>   <*> pure (LLVM, Version [3,4] [])
+>   <*> pure (Android.target (Arm Armv7))
+-}
+
 module Development.Shake.Language.C.Rules (
     executable
   , staticLibrary
@@ -79,14 +121,34 @@ buildProduct getLinker getToolChain result getBuildFlags getSources = do
 -- Rules (FilePath -> Action ())
 -- See https://github.com/samplecount/shake-language-c/issues/15
 
-executable :: Action ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
+-- | Shake rule for building an executable.
+executable :: Action ToolChain -- ^ Action returning a target 'ToolChain'
+           -> FilePath -- ^ Output file
+           -> Action (BuildFlags -> BuildFlags) -- ^ Action returning a 'BuildFlags' modifier
+           -> Action [FilePath] -- ^ Action returning a list of input source files
+           -> Rules FilePath -- ^ Rule returning the output file path
 executable toolChain = buildProduct (flip (get linker) Executable) toolChain
 
-staticLibrary :: Action ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
+-- | Shake rule for building a static library.
+staticLibrary :: Action ToolChain -- ^ Action returning a target 'ToolChain'
+              -> FilePath -- ^ Output file
+              -> Action (BuildFlags -> BuildFlags) -- ^ Action returning a 'BuildFlags' modifier
+              -> Action [FilePath] -- ^ Action returning a list of input source files
+              -> Rules FilePath -- ^ Rule returning the output file path
 staticLibrary toolChain = buildProduct (get archiver) toolChain
 
-sharedLibrary :: Action ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
+-- | Shake rule for building a shared (dynamically linked) library.
+sharedLibrary :: Action ToolChain -- ^ Action returning a target 'ToolChain'
+              -> FilePath -- ^ Output file
+              -> Action (BuildFlags -> BuildFlags) -- ^ Action returning a 'BuildFlags' modifier
+              -> Action [FilePath] -- ^ Action returning a list of input source files
+              -> Rules FilePath -- ^ Rule returning the output file path
 sharedLibrary toolChain = buildProduct (flip (get linker) SharedLibrary) toolChain
 
-loadableLibrary :: Action ToolChain -> FilePath -> Action (BuildFlags -> BuildFlags) -> Action [FilePath] -> Rules FilePath
+-- | Shake rule for building a dynamically loadable library.
+loadableLibrary :: Action ToolChain -- ^ Action returning a target 'ToolChain'
+                -> FilePath -- ^ Output file
+                -> Action (BuildFlags -> BuildFlags) -- ^ Action returning a 'BuildFlags' modifier
+                -> Action [FilePath] -- ^ Action returning a list of input source files
+                -> Rules FilePath -- ^ Rule returning the output file path
 loadableLibrary toolChain = buildProduct (flip (get linker) LoadableLibrary) toolChain
