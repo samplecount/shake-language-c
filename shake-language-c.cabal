@@ -20,8 +20,10 @@ Category: Development
 License: Apache-2.0
 License-File: LICENSE
 
-Copyright: Copyright (c) 2012-2014 Samplecount S.L.
-Maintainer: stefan@samplecount.com
+Copyright:    Copyright (c) 2012-2014 Samplecount S.L.
+Homepage:     https://github.com/samplecount/shake-language-c
+Bug-Reports:  https://github.com/samplecount/shake-language-c/issues
+Maintainer:   stefan@samplecount.com
 
 Cabal-Version: >= 1.4
 Build-Type: Simple
