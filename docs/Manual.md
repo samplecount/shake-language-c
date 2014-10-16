@@ -10,7 +10,7 @@ The module `Development.Shake.Language.C.Rules` exports a set of high-level Shak
 
 Sometimes you want to structure your project in a set of static libraries that are later linked into one or more executables. For Shake to recognise the libraries as dependencies of the executable you need to add them to the `localLibraries` field of the `BuildFlags` record.
 
-Suppose you declare a static library `libtest.a` and an executable `test` in Shake rules block, you can set up `libtest.a` as a dependency for `test` like this:
+Suppose you declare a static library `libtest.a` and an executable `test` in a Shake rules block, you can set up `libtest.a` as a dependency for `test` like this:
 
     let toolChain = ...
         buildFlags = ...
