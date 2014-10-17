@@ -58,6 +58,7 @@ Library
   Ghc-Options: -Wall
   Build-Depends:
       base >= 4 && < 5
+    , data-default-class
     , fclabels >= 2
     , process
     , shake >= 0.10

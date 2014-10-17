@@ -47,6 +47,7 @@ module Development.Shake.Language.C.BuildFlags (
 import           Control.Arrow
 import           Control.Monad
 import           Data.Char (isSpace)
+import           Data.Default.Class (Default(..))
 import           Data.Monoid
 import           Data.List
 import           Data.List.Split
@@ -57,10 +58,14 @@ import           Development.Shake.Language.C.Util
 
 {-| Record type for abstracting various toolchain command line flags.
 
-`BuildFlags` is an instance `Monoid`, you can create a default record with
-`mempty` and append flags with `mappend`.
+`BuildFlags` is an instance of `Default`, you can create a default record with
+`def`. `BuildFlags` is also an instance `Monoid`, you can create an empty record with
+`mempty` and append flags with `mappend`. `def` and `mempty` are synonyms:
 
-Record accessors are 'Data.Label.Mono.Lens' es from the
+>>> (def :: BuildFlags) == (mempty :: BuildFlags)
+True
+
+Record accessors are `Data.Label.Mono.Lens`es from the
 <https://hackage.haskell.org/package/fclabels fclabels> package, which
 makes accessing and modifying record fields a bit more convenient.
 @fclabels@ was chosen over <https://hackage.haskell.org/package/lens lens>
@@ -128,6 +133,9 @@ defaultBuildFlags =
       , _localLibraries = []
       , _archiverFlags = []
       }
+
+instance Default BuildFlags where
+  def = defaultBuildFlags
 
 instance Monoid BuildFlags where
   mempty = defaultBuildFlags
