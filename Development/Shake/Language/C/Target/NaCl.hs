@@ -28,10 +28,6 @@ module Development.Shake.Language.C.Target.NaCl (
   , toolChain
   , finalize
   , translate
-  , libppapi
-  , libppapi_cpp
-  , libnacl_io
-  , libppapi_simple
   , Arch(..)
   , mk_nmf
 ) where
@@ -133,22 +129,6 @@ translate tc arch input output = do
   need [input]
   command_ [] (toolFromString tc "finalize")
               ["-arch", archName, "-o", output, input]
-
--- | Link against the Pepper C API library.
-libppapi :: BuildFlags -> BuildFlags
-libppapi = append libraries ["ppapi"]
-
--- | Link against the Pepper C++ API library.
-libppapi_cpp :: BuildFlags -> BuildFlags
-libppapi_cpp = append libraries ["ppapi_cpp"]
-
--- | Link against @libnacl_io@.
-libnacl_io :: BuildFlags -> BuildFlags
-libnacl_io = append libraries ["nacl_io"]
-
--- | Link against the Simple Pepper C API library.
-libppapi_simple :: BuildFlags -> BuildFlags
-libppapi_simple = append libraries ["ppapi_simple"]
 
 -- | Pepper target architecture
 data Arch =
