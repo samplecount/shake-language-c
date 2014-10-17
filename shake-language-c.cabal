@@ -48,6 +48,9 @@ Library
     Development.Shake.Language.C.Target.OSX
     Development.Shake.Language.C.Target.Windows
   Other-Modules:
+    Development.Shake.Language.C.Host.Linux
+    Development.Shake.Language.C.Host.OSX
+    Development.Shake.Language.C.Host.Windows
     Development.Shake.Language.C.Language
     Development.Shake.Language.C.Target
     Development.Shake.Language.C.ToolChain

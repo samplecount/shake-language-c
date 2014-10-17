@@ -1,4 +1,4 @@
--- Copyright 2012-2013 Samplecount S.L.
+-- Copyright 2012-2014 Samplecount S.L.
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ module Development.Shake.Language.C.Target.OSX (
   , sdkVersion
   , toolChain
   , getPlatformVersions
-  , getDefaultToolChain
   , macosx_version_min
   , iphoneos_version_min
   , universalBinary
@@ -115,22 +114,6 @@ getPlatformVersionsWithRoot platform (DeveloperPath sdkRoot) = do
 getPlatformVersions :: Platform -> Action [Version]
 getPlatformVersions platform =
   getPlatformVersionsWithRoot platform =<< getSDKRoot
-
--- | Get OSX system version (first two digits).
-systemVersion :: Action Version
-systemVersion = liftIO $
-  flip Version []
-    <$> (map read . take 2 . splitOn ".")
-    <$> readProcess "sw_vers" ["-productVersion"] ""
-
-getDefaultToolChain :: IO (Target, Action ToolChain)
-getDefaultToolChain = do
-    let defaultTarget = target macOSX (X86 X86_64)
-    return ( defaultTarget
-           , toolChain
-               <$> getSDKRoot
-               <*> systemVersion
-               <*> pure defaultTarget )
 
 -- | SDK version given major and minor version numbers.
 sdkVersion :: Int -> Int -> Version

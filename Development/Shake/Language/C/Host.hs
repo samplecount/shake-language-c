@@ -26,9 +26,9 @@ module Development.Shake.Language.C.Host (
 
 import           Development.Shake (Action)
 import           Development.Shake.Language.C.Target (Target)
-import qualified Development.Shake.Language.C.Target.Linux as Linux
-import qualified Development.Shake.Language.C.Target.OSX as OSX
-import qualified Development.Shake.Language.C.Target.Windows as Windows
+import qualified Development.Shake.Language.C.Host.Linux as Linux
+import qualified Development.Shake.Language.C.Host.OSX as OSX
+import qualified Development.Shake.Language.C.Host.Windows as Windows
 import           Development.Shake.Language.C.ToolChain (ToolChain)
 import qualified System.Info as System
 import           System.IO.Unsafe (unsafePerformIO)
@@ -80,7 +80,7 @@ defaultToolChain :: (Target, Action ToolChain)
 defaultToolChain = unsafePerformIO $ do
   -- The assumption here is that target and toolchain don't change while the program is running.
   case os of
-    Linux -> Linux.getDefaultToolChain
-    OSX -> OSX.getDefaultToolChain
-    Windows -> Windows.getDefaultToolChain
+    Linux   -> Linux.getHostToolChain
+    OSX     -> OSX.getHostToolChain
+    Windows -> Windows.getHostToolChain
     -- _ -> error $ "No default toolchain for this operating system (" ++ show os ++ ")"

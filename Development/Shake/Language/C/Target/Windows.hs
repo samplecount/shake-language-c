@@ -27,8 +27,8 @@ supported.
 -}
 
 module Development.Shake.Language.C.Target.Windows (
-    toolChain
-  , getDefaultToolChain
+    target
+  , toolChain
 ) where
 
 import           Data.Label (get, set)
@@ -36,18 +36,8 @@ import           Development.Shake
 import           Development.Shake.Language.C.BuildFlags
 import           Development.Shake.Language.C.Target
 import           Development.Shake.Language.C.ToolChain
-import qualified System.Info as System
 
-getHostArch :: IO Arch
-getHostArch = do
-    -- TODO: Get the info from the environment
-    let arch = System.arch
-    return $ case arch of
-        "i386" -> X86 I386
-        "i686" -> X86 I686
-        "x86_64" -> X86 X86_64
-        _ -> error $ "Unknown host architecture " ++ arch
-
+-- | Build target given an architecture.
 target :: Arch -> Target
 target = Target Windows (Platform "windows")
 
@@ -75,8 +65,3 @@ toolChain LLVM =
   $ set linkerCommand "g++"
   $ defaultToolChain
 toolChain Generic = toolChain GCC
-
-getDefaultToolChain :: IO (Target, Action ToolChain)
-getDefaultToolChain = do
-    t <- fmap target getHostArch
-    return (t, return $ toolChain Generic)

@@ -1,4 +1,4 @@
--- Copyright 2012-2013 Samplecount S.L.
+-- Copyright 2012-2014 Samplecount S.L.
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ Linux is also a supported host operating system, see
 -}
 
 module Development.Shake.Language.C.Target.Linux (
-    toolChain
-  , getDefaultToolChain
+    target
+  , toolChain
 ) where
 
 import Data.Label (get, set)
@@ -33,17 +33,8 @@ import Development.Shake
 import Development.Shake.Language.C.BuildFlags
 import Development.Shake.Language.C.Target
 import Development.Shake.Language.C.ToolChain
-import System.Process (readProcess)
 
-getHostArch :: IO Arch
-getHostArch = do
-    arch <- fmap (head.lines) $ readProcess "arch" [] ""
-    return $ case arch of
-        "i386" -> X86 I386
-        "i686" -> X86 I686
-        "x86_64" -> X86 X86_64
-        _ -> error $ "Unknown host architecture " ++ arch
-
+-- | Build target given an architecture.
 target :: Arch -> Target
 target = Target Linux (Platform "linux")
 
@@ -73,8 +64,3 @@ toolChain LLVM =
   $ set linkerCommand "g++"
   $ defaultToolChain
 toolChain Generic = toolChain GCC
-
-getDefaultToolChain :: IO (Target, Action ToolChain)
-getDefaultToolChain = do
-    t <- fmap target getHostArch
-    return (t, return $ toolChain GCC)
