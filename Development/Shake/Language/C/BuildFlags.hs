@@ -81,10 +81,19 @@ Note that when modifying the same record field, order of function composition
 matters and you might want to use the arrow combinator '>>>' for appending in
 source statement order:
 
->>> get systemIncludes \
-     $ buildFlags >>> append systemIncludes ["path1"] >>> append systemIncludes ["path2"] \
-     $ mempty
-["path1", "path2"]
+>>> :{
+  get systemIncludes
+    $ append systemIncludes ["path1"] . append systemIncludes ["path2"]
+    $ mempty
+:}
+["path2","path1"]
+
+>>> :{
+  get systemIncludes
+    $ append systemIncludes ["path1"] >>> append systemIncludes ["path2"]
+    $ mempty
+:}
+["path1","path2"]
 
 See "Development.Shake.Language.C.Rules" for how to use 'BuildFlags' in build
 product rules.
