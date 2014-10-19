@@ -17,13 +17,13 @@ Description: Build @C@ language projects for various target platforms
 -}
 
 module Development.Shake.Language.C (
-  -- * High-level build rules
-    module Development.Shake.Language.C.Rules
-  , module Development.Shake.Language.C.BuildFlags
   -- * Build targets
   -- $targets
-  , module Development.Shake.Language.C.Target
-  -- * Toolchains
+    module Development.Shake.Language.C.Target
+  -- * High-level build rules
+  , module Development.Shake.Language.C.BuildFlags
+  , module Development.Shake.Language.C.Rules
+  -- * Toolchain utilities
   , applyEnv
   , toEnv
 ) where
