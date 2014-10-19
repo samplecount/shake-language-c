@@ -26,6 +26,11 @@ module Development.Shake.Language.C.Target (
 import           Data.Char (toLower)
 import           Development.Shake.FilePath
 
+-- $setup
+-- >>> :load Development.Shake.Language.C.Target.OSX
+-- >>> :module -Development.Shake.Language.C.Target.OSX
+-- >>> import Development.Shake.Language.C.Target
+
 -- | Target operating system.
 data OS =
     Android -- ^ Google Android
@@ -37,7 +42,7 @@ data OS =
 
 -- | Target platform.
 --
--- Basically just a platform identifier string.
+-- Basically just a platform identifier string. Use `toBuildPrefix` to convert a platform to a file path prefix that can be used in Shake rules.
 data Platform = Platform {
     platformName :: String
   } deriving (Eq, Show)
@@ -58,6 +63,8 @@ data ArmVersion =
   deriving (Eq, Show)
 
 -- | Target architecture.
+--
+-- Use `toBuildPrefix` to convert an architecture to a short, more or less canonical file path prefix that can be used in Shake rules.
 data Arch =
     X86 X86Version  -- ^ Intel @x86@ architecture
   | Arm ArmVersion  -- ^ Arm architecture
@@ -80,6 +87,16 @@ archString arch =
     LLVM_IR    -> "llvm_ir"
 
 -- | Compilation target triple consisting of operating system, platform and architecture.
+--
+-- Use `toBuildPrefix` to convert a target to a file path prefix that can be used in Shake rules. The prefix is of the form
+--
+-- > <platform>/<architecture>
+--
+-- For example:
+--
+-- >>> import qualified Development.Shake.Language.C.Target.OSX as OSX
+-- >>> toBuildPrefix $ OSX.target OSX.iPhoneOS (Arm Armv7)
+-- "iphoneos/armv7"
 data Target = Target {
     targetOS :: OS              -- ^ Target operating system
   , targetPlatform :: Platform  -- ^ Target platform
