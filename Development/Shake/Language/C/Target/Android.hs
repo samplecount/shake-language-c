@@ -35,7 +35,6 @@ import           Data.Version (Version(..), showVersion)
 import           Development.Shake.Language.C.BuildFlags
 import           Development.Shake.Language.C.Target
 import           Development.Shake.Language.C.Label
-import           Development.Shake.Language.C.Language
 import           Development.Shake.Language.C.ToolChain
 import qualified System.Info as System
 

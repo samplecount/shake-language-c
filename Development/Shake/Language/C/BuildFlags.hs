@@ -19,12 +19,15 @@ Description: Build flags record for building @C@ language projects
 
 The `BuildFlags` record is an abstraction for various toolchain flags for
 building executables and libraries from source files in a @C@-based language.
-It's intended to be toolchain-independent, but currently there's certainly a
+It's intended to be toolchain-independent, but currently there's a
 bias towards binutils\/gcc/clang toolchains.
 -}
 
 module Development.Shake.Language.C.BuildFlags (
-    BuildFlags
+  -- * Source Language
+    Language(..)
+  -- * Build flags
+  , BuildFlags
     -- Poor man's documentation for TH generated functions.
   , systemIncludes -- | System include directories, referenced by @#include \<...\>@ in code and usually passed to the compiler with the @-I@ flag.
   , userIncludes -- | User include directories, referenced by @#include "..."@ in code and usually passed to the compiler with the @-iquote@ flag.
@@ -36,9 +39,12 @@ module Development.Shake.Language.C.BuildFlags (
   , linkerFlags -- | Flags passed to the linker.
   , localLibraries -- | Locally built static libraries to be linked against. See also the corresponding section in the <https://github.com/samplecount/shake-language-c/blob/master/docs/Manual.md#locally-built-libraries manual>.
   , archiverFlags -- | Flags passed to the object archiver.
+  -- ** Utilities for toolchain writers
   , defineFlags
   , compilerFlagsFor
+  -- ** Working with config files
   , fromConfig
+  -- * Utilities
   , (>>>=)
   , append
   , prepend

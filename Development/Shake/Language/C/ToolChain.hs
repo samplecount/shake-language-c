@@ -60,7 +60,7 @@ import           Development.Shake.FilePath
 import           Development.Shake.Util (needMakefileDependencies)
 import           Development.Shake.Language.C.Label
 import           Development.Shake.Language.C.BuildFlags
-import           Development.Shake.Language.C.Language (Language(..), languageOf)
+import           Development.Shake.Language.C.Language (languageOf)
 import           Development.Shake.Language.C.Util
 
 -- | Linkage type, static or shared.

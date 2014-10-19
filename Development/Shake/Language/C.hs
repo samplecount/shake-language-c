@@ -30,7 +30,6 @@ module Development.Shake.Language.C (
 ) where
 
 import Development.Shake.Language.C.BuildFlags
-import Development.Shake.Language.C.Language
 import Development.Shake.Language.C.Rules
 import Development.Shake.Language.C.Target
 import Development.Shake.Language.C.ToolChain (
