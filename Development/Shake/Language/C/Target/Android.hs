@@ -29,7 +29,7 @@ module Development.Shake.Language.C.Target.Android (
   , native_app_glue
 ) where
 
-import           Control.Arrow
+import           Control.Category ((>>>))
 import           Development.Shake.FilePath
 import           Data.Version (Version(..), showVersion)
 import           Development.Shake.Language.C.BuildFlags

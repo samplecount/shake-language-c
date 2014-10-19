@@ -50,7 +50,7 @@ module Development.Shake.Language.C.BuildFlags (
   , prepend
 ) where
 
-import           Control.Arrow
+import           Control.Category ((>>>))
 import           Control.Monad
 import           Data.Char (isSpace)
 import           Data.Default.Class (Default(..))
