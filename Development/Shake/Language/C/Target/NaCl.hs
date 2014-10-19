@@ -138,7 +138,7 @@ data Arch =
 
 -- | Create Native Client Manifest (nmf) file.
 --
--- This file is needed for serving NaCl/PNaCl outside the Google Play store. See the native client <https://developer.chrome.com/native-client/reference/nacl-manifest-format documentation> for more information on the file format.
+-- This file is needed for serving NaCl\/PNaCl outside the Google Play store. See the native client <https://developer.chrome.com/native-client/reference/nacl-manifest-format documentation> for more information on the file format.
 mk_nmf :: [(Arch, FilePath)]  -- ^ List of executables with the corresponding architecture
        -> FilePath            -- ^ Output file
        -> Action ()
