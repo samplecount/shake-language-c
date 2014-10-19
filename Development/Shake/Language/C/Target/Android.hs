@@ -40,7 +40,7 @@ import           Development.Shake.Language.C.ToolChain
 import qualified System.Info as System
 
 unsupportedArch :: Arch -> a
-unsupportedArch arch = error $ "Unsupported Android target architecture " ++ archString arch
+unsupportedArch arch = error $ "Unsupported Android target architecture " ++ show arch
 
 toolChainPrefix :: Target -> String
 toolChainPrefix x =
@@ -84,10 +84,13 @@ mkDefaultBuildFlags ndk version arch =
                               (Arm _) -> "arm"
                               _       -> unsupportedArch arch
     march = "-march=" ++ case arch of
-                          (Arm Armv5) -> "armv5te"
-                          (Arm Armv6) -> "armv5te"
-                          (Arm Armv7) -> "armv7-a"
-                          _           -> archString arch
+                          X86 I386   -> "i386"
+                          X86 I686   -> "i686"
+                          X86 X86_64 -> "x86_64"
+                          Arm Armv5  -> "armv5te"
+                          Arm Armv6  -> "armv5te"
+                          Arm Armv7  -> "armv7-a"
+                          _ -> unsupportedArch arch
     archCompilerFlags (Arm Armv7) = [(Nothing, ["-mfloat-abi=softfp", "-mfpu=neon" {- vfpv3-d16 -}])]
     archCompilerFlags (Arm _)     = [(Nothing, ["-mtune=xscale", "-msoft-float"])]
     archCompilerFlags _           = []

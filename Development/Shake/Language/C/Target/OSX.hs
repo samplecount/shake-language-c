@@ -52,6 +52,18 @@ import           Development.Shake.Language.C.ToolChain
 import           System.Process (readProcess)
 import           Text.Read (readEither)
 
+archString :: Arch -> String
+archString arch =
+  case arch of
+    X86 I386   -> "i386"
+    X86 I686   -> "i686"
+    X86 X86_64 -> "x86_64"
+    Arm Armv5  -> "armv5"
+    Arm Armv6  -> "armv6"
+    Arm Armv7  -> "armv7"
+    Arm Armv7s -> "armv7s"
+    _          -> error $ "Unsupported OSX target architecture " ++ show arch
+
 archFlags :: Target -> [String]
 archFlags t = ["-arch", archString (targetArch t)]
 

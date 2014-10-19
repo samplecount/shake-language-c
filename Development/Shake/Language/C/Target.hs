@@ -18,7 +18,6 @@ module Development.Shake.Language.C.Target (
   , ArmVersion(..)
   , X86Version(..)
   , Arch(..)
-  , archString
   , Target(..)
   , ToBuildPrefix(..)
 ) where
@@ -71,21 +70,6 @@ data Arch =
   | LLVM_IR         -- ^ LLVM intermediate representation, used by `Pepper` (PNaCl)
   deriving (Eq, Show)
 
--- | Architecture short string.
---
--- Mainly useful for constructing build output directories.
-archString :: Arch -> String
-archString arch =
-  case arch of
-    X86 I386   -> "i386"
-    X86 I686   -> "i686"
-    X86 X86_64 -> "x86_64"
-    Arm Armv5  -> "armv5"
-    Arm Armv6  -> "armv6"
-    Arm Armv7  -> "armv7"
-    Arm Armv7s -> "armv7s"
-    LLVM_IR    -> "llvm_ir"
-
 -- | Compilation target triple consisting of operating system, platform and architecture.
 --
 -- Use `toBuildPrefix` to convert a target to a file path prefix that can be used in Shake rules. The prefix is of the form
@@ -113,7 +97,16 @@ instance ToBuildPrefix Platform where
   toBuildPrefix = map toLower . platformName
 
 instance ToBuildPrefix Arch where
-  toBuildPrefix = archString
+  toBuildPrefix arch =
+    case arch of
+      X86 I386   -> "i386"
+      X86 I686   -> "i686"
+      X86 X86_64 -> "x86_64"
+      Arm Armv5  -> "armv5"
+      Arm Armv6  -> "armv6"
+      Arm Armv7  -> "armv7"
+      Arm Armv7s -> "armv7s"
+      LLVM_IR    -> "llvm_ir"
 
 instance ToBuildPrefix Target where
    toBuildPrefix target =
