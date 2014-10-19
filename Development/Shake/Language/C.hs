@@ -24,35 +24,15 @@ module Development.Shake.Language.C (
   -- $targets
   , module Development.Shake.Language.C.Target
   -- * Toolchains
-  , module Development.Shake.Language.C.ToolChain
-  -- * Source Languages
-  , module Development.Shake.Language.C.Language
+  , applyEnv
+  , toEnv
 ) where
 
 import Development.Shake.Language.C.BuildFlags
 import Development.Shake.Language.C.Rules
 import Development.Shake.Language.C.Target
 import Development.Shake.Language.C.ToolChain (
-    Linkage(..)
-  , LinkResult(..)
-  , ToolChain
-  , ToolChainVariant(..)
-  , toolDirectory
-  , toolPrefix
-  , variant
-  , compilerCommand
-  , compiler
-  , archiverCommand
-  , archiver
-  , linkerCommand
-  , linker
-  , defaultBuildFlags
-  , defaultCompiler
-  , Archiver
-  , defaultArchiver
-  , Linker
-  , defaultLinker
-  , applyEnv
+    applyEnv
   , toEnv
   )
 
