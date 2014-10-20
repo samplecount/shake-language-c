@@ -6,7 +6,7 @@
 
 ## Documentation
 
-Please see the [manual](/docs/Manual.md) for beginnings of developer documentation.
+Please see the [package documentation](http://hackage.haskell.org/package/shake-language-c). Feel free to open an [issue](https://github.com/samplecount/shake-language-c/issues) or send a pull request if there's anything missing that you want to see covered.
 
 ## Examples
 
