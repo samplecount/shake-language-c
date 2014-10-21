@@ -21,6 +21,7 @@ which is available on many Unix like operating systems.
 -}
 module Development.Shake.Language.C.PkgConfig (
     Options(..)
+  , defaultOptions
   , pkgConfig
   , fromConfig
 ) where
@@ -72,11 +73,17 @@ data Options = Options {
   , static :: Bool -- ^ Return flags appropriate for static linking
   } deriving (Eq, Show)
 
+-- | Default @pkg-config@ options.
+--
+-- This function is an alias for `def`.
+defaultOptions :: Options
+defaultOptions = Options{
+    searchPath = Nothing
+  , static = False
+  }
+
 instance Default Options where
-  def = Options{
-      searchPath = Nothing
-    , static = False
-    }
+  def = defaultOptions
 
 -- | Call @pkg-config@ with options and a package name and return a 'BuildFlags' modification function.
 --
