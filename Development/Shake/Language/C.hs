@@ -21,9 +21,11 @@ module Development.Shake.Language.C (
   -- $targets
     module Development.Shake.Language.C.Target
   -- * High-level build rules
+  , Linkage(..)
   , module Development.Shake.Language.C.BuildFlags
   , module Development.Shake.Language.C.Rules
   -- * Toolchain utilities
+  , ToolChainVariant(..)
   , applyEnv
   , toEnv
 ) where
@@ -31,10 +33,7 @@ module Development.Shake.Language.C (
 import Development.Shake.Language.C.BuildFlags
 import Development.Shake.Language.C.Rules
 import Development.Shake.Language.C.Target
-import Development.Shake.Language.C.ToolChain (
-    applyEnv
-  , toEnv
-  )
+import Development.Shake.Language.C.ToolChain
 
 {- $targets
 
