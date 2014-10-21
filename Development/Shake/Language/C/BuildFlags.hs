@@ -28,7 +28,6 @@ module Development.Shake.Language.C.BuildFlags (
     Language(..)
   -- * Build flags
   , BuildFlags
-  , def
     -- Poor man's documentation for TH generated functions.
   , systemIncludes -- | System include directories, referenced by @#include \<...\>@ in code and usually passed to the compiler with the @-I@ flag.
   , userIncludes -- | User include directories, referenced by @#include "..."@ in code and usually passed to the compiler with the @-iquote@ flag.
