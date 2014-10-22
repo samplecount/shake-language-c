@@ -28,6 +28,16 @@ concatMapFlag :: String -> [String] -> [String]
 concatMapFlag f = map (f++)
 
 -- | Escape spaces with '\\' character.
+--
+-- >>> escapeSpaces "string contains spaces"
+-- "string\\ contains\\ spaces"
+--
+-- >>> escapeSpaces " leading and trailing spaces "
+-- "\\ leading\\ and\\ trailing\\ spaces\\ "
+--
+-- >>> escapeSpaces "noSpaces"
+-- "noSpaces"
+--
 escapeSpaces :: String -> String
 escapeSpaces [] = []
 escapeSpaces (' ':xs) = '\\' : ' ' : escapeSpaces xs
@@ -37,6 +47,10 @@ escapeSpaces (x:xs) = x : escapeSpaces xs
 -- | Split a list of space separated strings.
 --
 -- Spaces can be escaped by '\\'.
+--
+-- >>> words' "word and word\\ with\\ spaces"
+-- ["word","and","word with spaces"]
+--
 words' :: String -> [String]
 words' = unescape . words
   where
