@@ -24,7 +24,8 @@ module Development.Shake.Language.C (
   , Linkage(..)
   , module Development.Shake.Language.C.BuildFlags
   , module Development.Shake.Language.C.Rules
-  -- * Toolchain utilities
+  -- * Toolchain types and utilities
+  , ToolChain
   , ToolChainVariant(..)
   , applyEnv
   , toEnv
