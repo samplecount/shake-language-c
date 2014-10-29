@@ -10,6 +10,9 @@ import qualified Development.Shake.Language.C.Host as Host
 import qualified System.Directory as Dir
 import Test.Hspec
 
+buildDir :: FilePath
+buildDir = "tests/build"
+
 withShake :: String
           -> (FilePath
               -> (FilePath -> FilePath)
@@ -18,10 +21,10 @@ withShake :: String
           -> IO String
 withShake name mkRules = do
   ref <- newIORef undefined
-  shake shakeOptions { shakeFiles = "build/" } $ do
+  shake shakeOptions { shakeFiles = addTrailingPathSeparator buildDir } $ do
     output <- mkRules name
-                      (\x -> "build/tests" </> name </> "input" </> x)
-                      (\x -> "build/tests" </> name </> "output" </> x)
+                      (\x -> buildDir </> name </> "input" </> x)
+                      (\x -> buildDir </> name </> "output" </> x)
     action $ do
       need [output]
       liftIO $ writeIORef ref output
@@ -42,8 +45,8 @@ cstring = show
 main :: IO ()
 main = hspec $ do
   runIO $ do
-    b <- Dir.doesDirectoryExist "build"
-    when b $ Dir.removeDirectoryRecursive "build"
+    b <- Dir.doesDirectoryExist buildDir
+    when b $ Dir.removeDirectoryRecursive buildDir
   describe "Host toolchain" $ do
     it "compiles a C file to an executable" $ do
       "host_toolchain_compile_c" `shouldBeBuiltBy` \name mkInput mkOutput -> do

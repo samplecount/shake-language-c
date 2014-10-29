@@ -3,3 +3,4 @@
 /build/
 /cabal.sandbox.config
 /dist/
+/tests/build/
