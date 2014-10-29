@@ -71,6 +71,12 @@ test-suite doctests
   main-is:       tests/doctests.hs
   build-depends: base, doctest >= 0.8
 
+test-suite spectests
+  type:          exitcode-stdio-1.0
+  ghc-options:   -threaded
+  main-is:       tests/spectests.hs
+  build-depends: base, directory, hspec
+
 Source-Repository head
   Type:     git
   Location: https://github.com/samplecount/shake-language-c.git
