@@ -189,15 +189,14 @@ libcxx :: Linkage                     -- ^ `Static` or `Shared`
        -> Target                      -- ^ Build target, see `target`
        -> (BuildFlags -> BuildFlags)  -- ^ 'BuildFlags' modification function
 libcxx linkage ndk t =
-    append systemIncludes [ libcxxPath </> "libcxx" </> "include"
+    append systemIncludes [ stl </> "llvm-libc++" </> "libcxx" </> "include"
                           -- NOTE: libcxx needs to be first in include path!
-                          , stlPath </> "gabi++" </> "include"
+                          , stl </> "llvm-libc++abi" </> "libcxxabi" </> "include"
                           , ndk </> "sources" </> "android" </> "support" </> "include" ]
   . append compilerFlags [(Just Cpp, ["-stdlib=libc++"])]
-  . append libraryPath [libcxxPath </> "libs" </> abi]
+  . append libraryPath [stl </> "llvm-libc++" </> "libs" </> abi]
   . prepend libraries [lib]
-    where stlPath = ndk </> "sources" </> "cxx-stl"
-          libcxxPath = stlPath </> "llvm-libc++"
+    where stl = ndk </> "sources" </> "cxx-stl"
           abi = abiString (targetArch t)
           lib = case linkage of
                   Static -> "c++_static"
