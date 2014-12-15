@@ -1,0 +1,9 @@
+#!/bin/sh
+
+out=`cabal check`
+if [ $? -ne 0 ]; then
+    echo "cabal check failed:\n"
+    echo $out
+    exit 1
+fi
+
