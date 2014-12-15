@@ -1,6 +1,10 @@
 # Changelog for shake-language-c
 
-## 0.6.0 - 2014-12-15
+## [v0.6.1][]
+
+Bug fix release.
+
+## [v0.6.0][]
 
 ### Added
 
@@ -18,6 +22,10 @@
 * Remove `libppapi`, `libppapi_cpp`, `libnacl_io`, `libppapi_simple` from `Development.Shake.Language.C.Target.NaCl`.
 * Remove `Development.Shake.Language.C.Target.archString`.
 
-## 0.5.0 - 2014-10-17
+## [0.5.0][]
 
 First released version.
+
+[v0.6.1]: https://github.com/samplecount/shake-language-c/tree/v0.6.1
+[v0.6.0]: https://github.com/samplecount/shake-language-c/tree/v0.6.0
+[v0.5.0]: https://github.com/samplecount/shake-language-c/tree/v0.5.0
