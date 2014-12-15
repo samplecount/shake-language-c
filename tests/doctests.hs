@@ -15,8 +15,9 @@
 import Test.DocTest
 
 main = doctest [
-    "Development/Shake/Language/C/BuildFlags.hs"
-  , "Development/Shake/Language/C/Config.hs"
-  , "Development/Shake/Language/C/Target.hs"
-  , "Development/Shake/Language/C/Util.hs"
+    "-isrc"
+  , "src/Development/Shake/Language/C/BuildFlags.hs"
+  , "src/Development/Shake/Language/C/Config.hs"
+  , "src/Development/Shake/Language/C/Target.hs"
+  , "src/Development/Shake/Language/C/Util.hs"
   ]
