@@ -1,6 +1,6 @@
 # Changelog for shake-language-c
 
-## [0.6.0](https://github.com/samplecount/shake-language-c/issues?q=is%3Aopen+is%3Aissue+milestone%3A%22RC+0.6.0%22) - Release candidate
+## 0.6.0 - 2014-12-15
 
 ### Added
 
