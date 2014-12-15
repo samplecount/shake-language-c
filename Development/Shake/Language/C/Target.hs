@@ -18,13 +18,17 @@ module Development.Shake.Language.C.Target (
   , ArmVersion(..)
   , X86Version(..)
   , Arch(..)
-  , archString
   , Target(..)
   , ToBuildPrefix(..)
 ) where
 
 import           Data.Char (toLower)
 import           Development.Shake.FilePath
+
+-- $setup
+-- >>> :load Development.Shake.Language.C.Target.OSX
+-- >>> :module -Development.Shake.Language.C.Target.OSX
+-- >>> import Development.Shake.Language.C.Target
 
 -- | Target operating system.
 data OS =
@@ -37,7 +41,7 @@ data OS =
 
 -- | Target platform.
 --
--- Basically just a platform identifier string.
+-- Basically just a platform identifier string. Use `toBuildPrefix` to convert a platform to a file path prefix that can be used in Shake rules.
 data Platform = Platform {
     platformName :: String
   } deriving (Eq, Show)
@@ -58,28 +62,25 @@ data ArmVersion =
   deriving (Eq, Show)
 
 -- | Target architecture.
+--
+-- Use `toBuildPrefix` to convert an architecture to a short, more or less canonical file path prefix that can be used in Shake rules.
 data Arch =
     X86 X86Version  -- ^ Intel @x86@ architecture
   | Arm ArmVersion  -- ^ Arm architecture
   | LLVM_IR         -- ^ LLVM intermediate representation, used by `Pepper` (PNaCl)
   deriving (Eq, Show)
 
--- | Architecture short string.
---
--- Mainly useful for constructing build output directories.
-archString :: Arch -> String
-archString arch =
-  case arch of
-    X86 I386   -> "i386"
-    X86 I686   -> "i686"
-    X86 X86_64 -> "x86_64"
-    Arm Armv5  -> "armv5"
-    Arm Armv6  -> "armv6"
-    Arm Armv7  -> "armv7"
-    Arm Armv7s -> "armv7s"
-    LLVM_IR    -> "llvm_ir"
-
 -- | Compilation target triple consisting of operating system, platform and architecture.
+--
+-- Use `toBuildPrefix` to convert a target to a file path prefix that can be used in Shake rules. The prefix is of the form
+--
+-- > <platform>/<architecture>
+--
+-- For example:
+--
+-- >>> import qualified Development.Shake.Language.C.Target.OSX as OSX
+-- >>> toBuildPrefix $ OSX.target OSX.iPhoneOS (Arm Armv7)
+-- "iphoneos/armv7"
 data Target = Target {
     targetOS :: OS              -- ^ Target operating system
   , targetPlatform :: Platform  -- ^ Target platform
@@ -96,7 +97,16 @@ instance ToBuildPrefix Platform where
   toBuildPrefix = map toLower . platformName
 
 instance ToBuildPrefix Arch where
-  toBuildPrefix = archString
+  toBuildPrefix arch =
+    case arch of
+      X86 I386   -> "i386"
+      X86 I686   -> "i686"
+      X86 X86_64 -> "x86_64"
+      Arm Armv5  -> "armv5"
+      Arm Armv6  -> "armv6"
+      Arm Armv7  -> "armv7"
+      Arm Armv7s -> "armv7s"
+      LLVM_IR    -> "llvm_ir"
 
 instance ToBuildPrefix Target where
    toBuildPrefix target =

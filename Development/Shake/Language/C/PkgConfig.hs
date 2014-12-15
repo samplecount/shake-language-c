@@ -22,14 +22,13 @@ which is available on many Unix like operating systems.
 module Development.Shake.Language.C.PkgConfig (
     Options(..)
   , defaultOptions
-  , pkgConfigWithOptions
   , pkgConfig
   , fromConfig
-  , fromConfigWithOptions
 ) where
 
 import Control.Applicative
 import Data.Char (toLower)
+import Data.Default.Class (Default(..))
 import Data.List (intercalate, isPrefixOf)
 import Development.Shake
 import Development.Shake.FilePath
@@ -74,18 +73,23 @@ data Options = Options {
   , static :: Bool -- ^ Return flags appropriate for static linking
   } deriving (Eq, Show)
 
--- | Default options.
+-- | Default @pkg-config@ options.
+--
+-- This function is an alias for `def`.
 defaultOptions :: Options
-defaultOptions = Options {
+defaultOptions = Options{
     searchPath = Nothing
   , static = False
   }
 
+instance Default Options where
+  def = defaultOptions
+
 -- | Call @pkg-config@ with options and a package name and return a 'BuildFlags' modification function.
 --
 -- The @pkg-config@ executable must be installed on the build host.
-pkgConfigWithOptions :: Options -> String -> Action (BuildFlags -> BuildFlags)
-pkgConfigWithOptions options pkg = do
+pkgConfig :: Options -> String -> Action (BuildFlags -> BuildFlags)
+pkgConfig options pkg = do
   env <- case searchPath options of
     Nothing -> return []
     Just path -> do
@@ -98,12 +102,6 @@ pkgConfigWithOptions options pkg = do
   return (  parseCflags (parseFlags cflags)
           . parseLibs (parseFlags libs) )
 
--- | Call @pkg-config@ with default options and a package name and return a 'BuildFlags' modification function.
---
--- The @pkg-config@ executable must be installed on the build host.
-pkgConfig :: String -> Action (BuildFlags -> BuildFlags)
-pkgConfig = pkgConfigWithOptions defaultOptions
-
 -- | Given an initial 'Options' record and a configuration variable lookup function, call @pkg-config@ based on configuration variable settings and return a 'BuildFlags' modification function.
 --
 -- The following configuration variables are recognised:
@@ -111,8 +109,8 @@ pkgConfig = pkgConfigWithOptions defaultOptions
 --   [@PkgConfig.packages@] List of package names for which build flags should be queried
 --   [@PkgConfig.options.searchPath@] Space-separated list of file paths, corresponds to the `searchPath` option
 --   [@PkgConfig.options.static@] @true@ or @false@, corresponds to the `static` option
-fromConfigWithOptions :: Options -> (String -> Action (Maybe String)) -> Action (BuildFlags -> BuildFlags)
-fromConfigWithOptions initialOptions cfg = do
+fromConfig :: Options -> (String -> Action (Maybe String)) -> Action (BuildFlags -> BuildFlags)
+fromConfig initialOptions cfg = do
   config_searchPath <- fmap words' <$> cfg "PkgConfig.options.searchPath"
   config_static <- fmap (bool . words) <$> cfg "PkgConfig.options.static"
   config_packages <- fmap words <$> cfg "PkgConfig.packages"
@@ -120,13 +118,8 @@ fromConfigWithOptions initialOptions cfg = do
       searchPath = maybe (searchPath initialOptions) Just config_searchPath,
       static = maybe (static initialOptions) id config_static
     }
-  flags <- mapM (pkgConfigWithOptions options)
-                (maybe [] id config_packages)
+  flags <- mapM (pkgConfig options) (maybe [] id config_packages)
   return $ foldl (.) id $ flags
   where
     bool (x:_) = map toLower x == "true"
     bool _ = False
-
--- | Like `fromConfigWithOptions` but with default options.
-fromConfig :: (String -> Action (Maybe String)) -> Action (BuildFlags -> BuildFlags)
-fromConfig = fromConfigWithOptions defaultOptions

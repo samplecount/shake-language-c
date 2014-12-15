@@ -1,0 +1,10 @@
+language: haskell
+ghc: 7.8.3
+deploy:
+  provider: hackage
+  username: StefanKersten
+  password:
+    secure: OeylLs0HzrV/W756CTWLtsaVJXENE9y6axQVeFPxLCQA42YxiHOS7xaiE/QHXWVNtXKSIqSmbrPZ4/ycMl+80YxrlY7QwoFD9ikZsENIAe6xg80z2eRzWgtp2pdlpfG0bBfAdOZ3p5aKcwF69bM2UaQWcWuHGxNcMljpN7I0TL8=
+  on:
+    repo: samplecount/shake-language-c
+    branch: master

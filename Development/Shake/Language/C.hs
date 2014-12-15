@@ -17,45 +17,24 @@ Description: Build @C@ language projects for various target platforms
 -}
 
 module Development.Shake.Language.C (
-  -- * High-level build rules
-    module Development.Shake.Language.C.Rules
-  , module Development.Shake.Language.C.BuildFlags
   -- * Build targets
   -- $targets
-  , module Development.Shake.Language.C.Target
-  -- * Toolchains
-  , module Development.Shake.Language.C.ToolChain
-  -- * Source Languages
-  , module Development.Shake.Language.C.Language
+    module Development.Shake.Language.C.Target
+  -- * High-level build rules
+  , Linkage(..)
+  , module Development.Shake.Language.C.BuildFlags
+  , module Development.Shake.Language.C.Rules
+  -- * Toolchain types and utilities
+  , ToolChain
+  , ToolChainVariant(..)
+  , applyEnv
+  , toEnv
 ) where
 
 import Development.Shake.Language.C.BuildFlags
-import Development.Shake.Language.C.Language
 import Development.Shake.Language.C.Rules
 import Development.Shake.Language.C.Target
-import Development.Shake.Language.C.ToolChain (
-    Linkage(..)
-  , LinkResult(..)
-  , ToolChain
-  , ToolChainVariant(..)
-  , toolDirectory
-  , toolPrefix
-  , variant
-  , compilerCommand
-  , compiler
-  , archiverCommand
-  , archiver
-  , linkerCommand
-  , linker
-  , defaultBuildFlags
-  , defaultCompiler
-  , Archiver
-  , defaultArchiver
-  , Linker
-  , defaultLinker
-  , applyEnv
-  , toEnv
-  )
+import Development.Shake.Language.C.ToolChain
 
 {- $targets
 

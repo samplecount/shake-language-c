@@ -13,7 +13,7 @@
 -- limitations under the License.
 
 Name:         shake-language-c
-Version:      0.5.0
+Version:      0.6.0
 Synopsis:     Utilities for cross-compiling with Shake
 Description:  This library provides <http://hackage.haskell.org/package/shake Shake> utilities for cross-compiling @C@, @C++@ and @ObjC@ code for various target platforms. Currently supported target platforms are Android, iOS, Linux, MacOS X, Windows\/MinGW and Google Portable Native Client (PNaCl). Supported host platforms are MacOS X, Linux and Windows.
 Category:     Development
@@ -41,7 +41,7 @@ Library
     Development.Shake.Language.C.Host
     Development.Shake.Language.C.Label
     Development.Shake.Language.C.PkgConfig
-    Development.Shake.Language.C.Rules
+    Development.Shake.Language.C.ToolChain
     Development.Shake.Language.C.Target.Android
     Development.Shake.Language.C.Target.Linux
     Development.Shake.Language.C.Target.NaCl
@@ -52,17 +52,30 @@ Library
     Development.Shake.Language.C.Host.OSX
     Development.Shake.Language.C.Host.Windows
     Development.Shake.Language.C.Language
+    Development.Shake.Language.C.Rules
     Development.Shake.Language.C.Target
-    Development.Shake.Language.C.ToolChain
     Development.Shake.Language.C.Util
   Ghc-Options: -Wall
   Build-Depends:
       base >= 4 && < 5
+    , data-default-class
     , fclabels >= 2
     , process
     , shake >= 0.10
     , split
     , unordered-containers
+
+test-suite doctests
+  type:          exitcode-stdio-1.0
+  ghc-options:   -threaded
+  main-is:       tests/doctests.hs
+  build-depends: base, doctest >= 0.8
+
+test-suite spectests
+  type:          exitcode-stdio-1.0
+  ghc-options:   -threaded
+  main-is:       tests/spectests.hs
+  build-depends: base, directory, hspec
 
 Source-Repository head
   Type:     git

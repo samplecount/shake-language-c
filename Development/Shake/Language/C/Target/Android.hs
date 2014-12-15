@@ -29,18 +29,17 @@ module Development.Shake.Language.C.Target.Android (
   , native_app_glue
 ) where
 
-import           Control.Arrow
+import           Control.Category ((>>>))
 import           Development.Shake.FilePath
 import           Data.Version (Version(..), showVersion)
 import           Development.Shake.Language.C.BuildFlags
 import           Development.Shake.Language.C.Target
 import           Development.Shake.Language.C.Label
-import           Development.Shake.Language.C.Language
 import           Development.Shake.Language.C.ToolChain
 import qualified System.Info as System
 
 unsupportedArch :: Arch -> a
-unsupportedArch arch = error $ "Unsupported Android target architecture " ++ archString arch
+unsupportedArch arch = error $ "Unsupported Android target architecture " ++ show arch
 
 toolChainPrefix :: Target -> String
 toolChainPrefix x =
@@ -84,10 +83,13 @@ mkDefaultBuildFlags ndk version arch =
                               (Arm _) -> "arm"
                               _       -> unsupportedArch arch
     march = "-march=" ++ case arch of
-                          (Arm Armv5) -> "armv5te"
-                          (Arm Armv6) -> "armv5te"
-                          (Arm Armv7) -> "armv7-a"
-                          _           -> archString arch
+                          X86 I386   -> "i386"
+                          X86 I686   -> "i686"
+                          X86 X86_64 -> "x86_64"
+                          Arm Armv5  -> "armv5te"
+                          Arm Armv6  -> "armv5te"
+                          Arm Armv7  -> "armv7-a"
+                          _ -> unsupportedArch arch
     archCompilerFlags (Arm Armv7) = [(Nothing, ["-mfloat-abi=softfp", "-mfpu=neon" {- vfpv3-d16 -}])]
     archCompilerFlags (Arm _)     = [(Nothing, ["-mtune=xscale", "-msoft-float"])]
     archCompilerFlags _           = []
@@ -187,15 +189,14 @@ libcxx :: Linkage                     -- ^ `Static` or `Shared`
        -> Target                      -- ^ Build target, see `target`
        -> (BuildFlags -> BuildFlags)  -- ^ 'BuildFlags' modification function
 libcxx linkage ndk t =
-    append systemIncludes [ libcxxPath </> "libcxx" </> "include"
+    append systemIncludes [ stl </> "llvm-libc++" </> "libcxx" </> "include"
                           -- NOTE: libcxx needs to be first in include path!
-                          , stlPath </> "gabi++" </> "include"
+                          , stl </> "llvm-libc++abi" </> "libcxxabi" </> "include"
                           , ndk </> "sources" </> "android" </> "support" </> "include" ]
   . append compilerFlags [(Just Cpp, ["-stdlib=libc++"])]
-  . append libraryPath [libcxxPath </> "libs" </> abi]
+  . append libraryPath [stl </> "llvm-libc++" </> "libs" </> abi]
   . prepend libraries [lib]
-    where stlPath = ndk </> "sources" </> "cxx-stl"
-          libcxxPath = stlPath </> "llvm-libc++"
+    where stl = ndk </> "sources" </> "cxx-stl"
           abi = abiString (targetArch t)
           lib = case linkage of
                   Static -> "c++_static"

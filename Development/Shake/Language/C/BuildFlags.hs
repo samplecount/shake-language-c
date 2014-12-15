@@ -19,12 +19,15 @@ Description: Build flags record for building @C@ language projects
 
 The `BuildFlags` record is an abstraction for various toolchain flags for
 building executables and libraries from source files in a @C@-based language.
-It's intended to be toolchain-independent, but currently there's certainly a
+It's intended to be toolchain-independent, but currently there's a
 bias towards binutils\/gcc/clang toolchains.
 -}
 
 module Development.Shake.Language.C.BuildFlags (
-    BuildFlags
+  -- * Source Language
+    Language(..)
+  -- * Build flags
+  , BuildFlags
     -- Poor man's documentation for TH generated functions.
   , systemIncludes -- | System include directories, referenced by @#include \<...\>@ in code and usually passed to the compiler with the @-I@ flag.
   , userIncludes -- | User include directories, referenced by @#include "..."@ in code and usually passed to the compiler with the @-iquote@ flag.
@@ -36,17 +39,21 @@ module Development.Shake.Language.C.BuildFlags (
   , linkerFlags -- | Flags passed to the linker.
   , localLibraries -- | Locally built static libraries to be linked against. See also the corresponding section in the <https://github.com/samplecount/shake-language-c/blob/master/docs/Manual.md#locally-built-libraries manual>.
   , archiverFlags -- | Flags passed to the object archiver.
+  -- ** Utilities for toolchain writers
   , defineFlags
   , compilerFlagsFor
+  -- ** Working with config files
   , fromConfig
+  -- * Utilities
   , (>>>=)
   , append
   , prepend
 ) where
 
-import           Control.Arrow
+import           Control.Category ((>>>))
 import           Control.Monad
 import           Data.Char (isSpace)
+import           Data.Default.Class (Default(..))
 import           Data.Monoid
 import           Data.List
 import           Data.List.Split
@@ -57,10 +64,14 @@ import           Development.Shake.Language.C.Util
 
 {-| Record type for abstracting various toolchain command line flags.
 
-`BuildFlags` is an instance `Monoid`, you can create a default record with
-`mempty` and append flags with `mappend`.
+`BuildFlags` is an instance of `Default`, you can create a default record with
+`def`. `BuildFlags` is also an instance `Monoid`, you can create an empty record with
+`mempty` and append flags with `mappend`. `def` and `mempty` are synonyms:
 
-Record accessors are 'Data.Label.Mono.Lens' es from the
+>>> (def :: BuildFlags) == (mempty :: BuildFlags)
+True
+
+Record accessors are `Data.Label.Mono.Lens`es from the
 <https://hackage.haskell.org/package/fclabels fclabels> package, which
 makes accessing and modifying record fields a bit more convenient.
 @fclabels@ was chosen over <https://hackage.haskell.org/package/lens lens>
@@ -128,6 +139,9 @@ defaultBuildFlags =
       , _localLibraries = []
       , _archiverFlags = []
       }
+
+instance Default BuildFlags where
+  def = defaultBuildFlags
 
 instance Monoid BuildFlags where
   mempty = defaultBuildFlags

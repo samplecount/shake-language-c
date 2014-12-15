@@ -50,7 +50,8 @@ withConfig deps = do
 
 -- | Parse a list of space separated paths from an input string. Spaces can be escaped by @\\@ characters.
 --
--- prop> parsePaths "a b c\\ d" == ["a", "b", "c d"]
+-- >>> parsePaths "/a /a/b /a/b/c\\ d"
+-- ["/a","/a/b","/a/b/c d"]
 parsePaths :: String -> [FilePath]
 parsePaths = words'
 
