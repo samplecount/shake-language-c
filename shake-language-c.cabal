@@ -33,7 +33,7 @@ Extra-Source-Files:
   README.md
 
 Library
-  Hs-Source-Dirs: .
+  Hs-Source-Dirs: src
   Exposed-Modules:
     Development.Shake.Language.C
     Development.Shake.Language.C.BuildFlags
@@ -66,16 +66,18 @@ Library
     , unordered-containers
 
 test-suite doctests
-  type:          exitcode-stdio-1.0
-  ghc-options:   -threaded
-  main-is:       tests/doctests.hs
-  build-depends: base, doctest >= 0.8
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: tests
+  main-is:        doctests.hs
+  ghc-options:    -threaded
+  build-depends:  base, doctest >= 0.8, shake >= 0.10, shake-language-c
 
 test-suite spectests
-  type:          exitcode-stdio-1.0
-  ghc-options:   -threaded
-  main-is:       tests/spectests.hs
-  build-depends: base, directory, hspec
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: tests
+  main-is:        spectests.hs
+  ghc-options:    -threaded
+  build-depends:  base, directory, hspec, shake >= 0.10, shake-language-c
 
 Source-Repository head
   Type:     git

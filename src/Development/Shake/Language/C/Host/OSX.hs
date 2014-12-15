@@ -17,18 +17,10 @@ module Development.Shake.Language.C.Host.OSX (
 ) where
 
 import Control.Applicative hiding ((*>))
-import Data.List.Split
-import Data.Version
 import Development.Shake
 import Development.Shake.Language.C.Target
 import Development.Shake.Language.C.Target.OSX
 import Development.Shake.Language.C.ToolChain
-
--- | Get OSX system version (first two digits).
-systemVersion :: Action Version
-systemVersion = do
-  Stdout version <- cmd "sw_vers" ["-productVersion"]
-  return $ Version (map read . take 2 . splitOn "." $ version) []
 
 -- | Get host toolchain.
 getHostToolChain :: IO (Target, Action ToolChain)
@@ -37,5 +29,5 @@ getHostToolChain = do
     return ( defaultTarget
            , toolChain
                <$> getSDKRoot
-               <*> systemVersion
+               <*> (maximum <$> getPlatformVersions (targetPlatform defaultTarget))
                <*> pure defaultTarget )
