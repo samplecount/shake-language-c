@@ -24,12 +24,6 @@ import Development.Shake.Language.C.Target
 import Development.Shake.Language.C.Target.OSX
 import Development.Shake.Language.C.ToolChain
 
--- | Get OSX system version (first two digits).
-systemVersion :: Action Version
-systemVersion = do
-  Stdout version <- cmd "sw_vers" ["-productVersion"]
-  return $ Version (map read . take 2 . splitOn "." $ version) []
-
 -- | Get host toolchain.
 getHostToolChain :: IO (Target, Action ToolChain)
 getHostToolChain = do
@@ -37,5 +31,5 @@ getHostToolChain = do
     return ( defaultTarget
            , toolChain
                <$> getSDKRoot
-               <*> systemVersion
+               <*> (maximum <$> getPlatformVersions (targetPlatform defaultTarget))
                <*> pure defaultTarget )
