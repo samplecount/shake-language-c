@@ -17,8 +17,6 @@ module Development.Shake.Language.C.Host.OSX (
 ) where
 
 import Control.Applicative hiding ((*>))
-import Data.List.Split
-import Data.Version
 import Development.Shake
 import Development.Shake.Language.C.Target
 import Development.Shake.Language.C.Target.OSX
