@@ -25,7 +25,7 @@ Homepage:     https://github.com/samplecount/shake-language-c
 Bug-Reports:  https://github.com/samplecount/shake-language-c/issues
 Maintainer:   stefan@samplecount.com
 
-Cabal-Version: >= 1.6
+Cabal-Version: >= 1.8
 Build-Type: Simple
 
 Extra-Source-Files:
