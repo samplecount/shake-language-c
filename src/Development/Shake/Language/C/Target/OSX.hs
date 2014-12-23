@@ -50,7 +50,7 @@ import           Development.Shake.Language.C.Target
 import           Development.Shake.Language.C.Label
 import           Development.Shake.Language.C.ToolChain
 import           System.Process (readProcess)
-import           Text.Read (readEither)
+import           Text.Read (readMaybe)
 
 archString :: Arch -> String
 archString arch =
@@ -109,14 +109,13 @@ platformSDKPath sdkRoot platform version =
 getPlatformVersionsWithRoot :: Platform -> DeveloperPath -> Action [Version]
 getPlatformVersionsWithRoot platform (DeveloperPath sdkRoot) = do
   dirs <- getDirectoryDirs (sdkDirectory sdkRoot platform)
-  case mapMaybe (stripPrefix name) dirs of
-    [] -> error $ "OSX: No SDK found for " ++ name
-    xs -> return [ flip Version []
-                 . map (either error id . readEither)
-                 . splitOn "."
-                 . dropExtension $ x
-                 | x <- xs ]
+  case mapMaybe (\x -> parseVersion =<< stripPrefix name (dropExtension x)) dirs of
+    [] -> error $ "No SDK found for " ++ name
+    xs -> return xs
   where name = platformName platform
+        parseVersion "" = Nothing
+        parseVersion str =
+          flip Version [] <$> mapM readMaybe (splitOn "." str)
 
 -- | Return a list of available platform SDK versions.
 --
