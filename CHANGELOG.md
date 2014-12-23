@@ -1,5 +1,11 @@
 # Changelog for shake-language-c
 
+## [v0.6.3][]
+
+### Changed
+
+* Fix bug in `Development.Shake.Language.C.Target.OSX`: `getPlatformVersionsWithRoot` works correctly now with SDK directories without version number, as introduced by Xcode 6
+
 ## [v0.6.2][]
 
 Bug fix release.
@@ -26,10 +32,11 @@ Bug fix release.
 * Remove `libppapi`, `libppapi_cpp`, `libnacl_io`, `libppapi_simple` from `Development.Shake.Language.C.Target.NaCl`.
 * Remove `Development.Shake.Language.C.Target.archString`.
 
-## [0.5.0][]
+## [v0.5.0][]
 
 First released version.
 
+[v0.6.3]: https://github.com/samplecount/shake-language-c/tree/v0.6.3
 [v0.6.2]: https://github.com/samplecount/shake-language-c/tree/v0.6.2
 [v0.6.1]: https://github.com/samplecount/shake-language-c/tree/v0.6.1
 [v0.6.0]: https://github.com/samplecount/shake-language-c/tree/v0.6.0
