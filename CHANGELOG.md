@@ -1,5 +1,9 @@
 # Changelog for shake-language-c
 
+## [v0.6.4][]
+
+* Fix Android toolchain definition for `x86` architecture
+
 ## [v0.6.3][]
 
 ### Changed
@@ -36,6 +40,7 @@ Bug fix release.
 
 First released version.
 
+[v0.6.4]: https://github.com/samplecount/shake-language-c/tree/v0.6.4
 [v0.6.3]: https://github.com/samplecount/shake-language-c/tree/v0.6.3
 [v0.6.2]: https://github.com/samplecount/shake-language-c/tree/v0.6.2
 [v0.6.1]: https://github.com/samplecount/shake-language-c/tree/v0.6.1

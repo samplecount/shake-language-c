@@ -48,6 +48,12 @@ toolChainPrefix x =
         Arm _ -> "arm-linux-androideabi-"
         arch  -> unsupportedArch arch
 
+toolPrefix_ :: Target -> String
+toolPrefix_ x =
+  case targetArch x of
+    X86 _ -> "i686-linux-android-"
+    _     -> toolChainPrefix x
+
 osPrefix :: String
 osPrefix = System.os ++ "-" ++ cpu
     where cpu = case System.arch of
@@ -102,6 +108,13 @@ mkDefaultBuildFlags ndk version arch =
 sdkVersion :: Int -> Version
 sdkVersion n = Version [n] []
 
+gccToolChain :: FilePath -> Target -> Version -> FilePath
+gccToolChain ndk target version =
+  ndk </> "toolchains"
+      </> toolChainPrefix target ++ showVersion version
+      </> "prebuilt"
+      </> osPrefix
+
 -- | Construct an Android toolchain.
 toolChain :: FilePath                     -- ^ NDK source directory
           -> Version                      -- ^ SDK version, see `sdkVersion`
@@ -111,12 +124,8 @@ toolChain :: FilePath                     -- ^ NDK source directory
 toolChain "" _ (_, _) _ = error "Empty NDK directory"
 toolChain ndk version (GCC, tcVersion) t =
     set variant GCC
-  $ set toolDirectory (Just (ndk </> "toolchains"
-                                 </> toolChainPrefix t ++ showVersion tcVersion
-                                 </> "prebuilt"
-                                 </> osPrefix
-                                 </> "bin"))
-  $ set toolPrefix (toolChainPrefix t)
+  $ set toolDirectory (Just (gccToolChain ndk t tcVersion </> "bin"))
+  $ set toolPrefix (toolPrefix_ t)
   $ set compilerCommand "gcc"
   $ set archiverCommand "ar"
   $ set linkerCommand "g++"
@@ -133,8 +142,8 @@ toolChain ndk version (LLVM, tcVersion) t =
   $ set archiverCommand "llvm-ar"
   $ set linkerCommand "clang++"
   $ set defaultBuildFlags (return $
-    let gcc_toolchain = ndk </> "toolchains/arm-linux-androideabi-4.8/prebuilt" </> osPrefix
-        flags = ["-target", llvmTarget t, "-gcc-toolchain", gcc_toolchain]
+    let flags = [ "-target", llvmTarget t
+                , "-gcc-toolchain", gccToolChain ndk t (Version [4,8] []) ]
     in  mkDefaultBuildFlags ndk version (targetArch t)
       . append compilerFlags [(Nothing, flags)]
       . append linkerFlags flags
