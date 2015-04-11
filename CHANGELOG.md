@@ -1,5 +1,8 @@
 # Changelog for shake-language-c
 
+## [v0.6.5][]
+
+
 ## [v0.6.4][]
 
 * Fix Android toolchain definition for `x86` architecture
