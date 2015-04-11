@@ -59,6 +59,7 @@ data ArmVersion =
   | Armv6
   | Armv7
   | Armv7s
+  | Arm64
   deriving (Eq, Show)
 
 -- | Target architecture.
@@ -91,6 +92,7 @@ data Target = Target {
 --
 -- The idea is that several such values can be combined to form more complex build directory hierarchies. This can be important for disambiguating build product paths in Shake rules.
 class ToBuildPrefix a where
+  -- | Convert a value to a (unique) build directory prefix.
   toBuildPrefix :: a -> FilePath
 
 instance ToBuildPrefix Platform where
@@ -99,14 +101,9 @@ instance ToBuildPrefix Platform where
 instance ToBuildPrefix Arch where
   toBuildPrefix arch =
     case arch of
-      X86 I386   -> "i386"
-      X86 I686   -> "i686"
-      X86 X86_64 -> "x86_64"
-      Arm Armv5  -> "armv5"
-      Arm Armv6  -> "armv6"
-      Arm Armv7  -> "armv7"
-      Arm Armv7s -> "armv7s"
-      LLVM_IR    -> "llvm_ir"
+      X86 version -> map toLower (show version)
+      Arm version -> map toLower (show version)
+      _           -> map toLower (show arch)
 
 instance ToBuildPrefix Target where
    toBuildPrefix target =

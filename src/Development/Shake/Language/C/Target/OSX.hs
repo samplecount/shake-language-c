@@ -62,6 +62,7 @@ archString arch =
     Arm Armv6  -> "armv6"
     Arm Armv7  -> "armv7"
     Arm Armv7s -> "armv7s"
+    Arm Arm64  -> "arm64"
     _          -> error $ "Unsupported OSX target architecture " ++ show arch
 
 archFlags :: Target -> [String]
