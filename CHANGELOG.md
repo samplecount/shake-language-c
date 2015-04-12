@@ -2,6 +2,8 @@
 
 ## [v0.7.0][]
 
+* Add `arm64` ARM version
+* Add support for `arm64` to OSX toolchains
 
 ## [v0.6.4][]
 
