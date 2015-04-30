@@ -12,8 +12,6 @@
 
 ## [v0.6.3][]
 
-### Changed
-
 * Fix bug in `Development.Shake.Language.C.Target.OSX`: `getPlatformVersionsWithRoot` works correctly now with SDK directories without version number, as introduced by Xcode 6
 
 ## [v0.6.2][]
