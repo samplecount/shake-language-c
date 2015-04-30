@@ -1,5 +1,9 @@
 # Changelog for shake-language-c
 
+## [v0.7.1][]
+
+* Fix compilation error with GHC 7.10 in test suite (#25)
+
 ## [v0.7.0][]
 
 * Add `arm64` ARM version
