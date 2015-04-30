@@ -1,6 +1,6 @@
 module Main where
 
-import Control.Applicative hiding ((*>))
+import Control.Applicative
 import Control.Monad
 import Data.IORef
 import Development.Shake
@@ -54,7 +54,7 @@ main = hspec $ do
             input = mkInput "source.c"
             outputGen = mkOutput $ "result" <.> exe
             output = mkOutput "result.txt"
-        input *> \path -> do
+        input %> \path -> do
           writeFileLines path [
               "#include <stdio.h>"
             , "int main(int argc, char** argv)"
@@ -64,7 +64,7 @@ main = hspec $ do
             , "}"
             ]
         _ <- executable toolChain outputGen (pure id) (pure [input])
-        output *> \path -> do
+        output %> \path -> do
           need [outputGen]
           cmd Shell (outputGen ++ " > " ++ path)
         return output
@@ -74,7 +74,7 @@ main = hspec $ do
             input = mkInput "source.cpp"
             outputGen = mkOutput $ "result" <.> exe
             output = mkOutput "result.txt"
-        input *> \path -> do
+        input %> \path -> do
           writeFileLines path [
               "#include <iostream>"
             , "int main(int argc, char** argv)"
@@ -84,7 +84,7 @@ main = hspec $ do
             , "}"
             ]
         _ <- executable toolChain outputGen (pure id) (pure [input])
-        output *> \path -> do
+        output %> \path -> do
           need [outputGen]
           cmd Shell (outputGen ++ " > " ++ path)
         return output
