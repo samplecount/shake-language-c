@@ -4,6 +4,7 @@
 
 * Add `arm64` ARM version
 * Add support for `arm64` to OSX toolchains
+* Fix compilation error with GHC 7.10 (#25)
 
 ## [v0.6.4][]
 
