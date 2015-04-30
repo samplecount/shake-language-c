@@ -38,7 +38,7 @@ module Development.Shake.Language.C.Target.OSX (
   , universalBinary
 ) where
 
-import           Control.Applicative hiding ((*>))
+import           Control.Applicative
 import           Data.List (stripPrefix)
 import           Data.List.Split (splitOn)
 import           Data.Maybe

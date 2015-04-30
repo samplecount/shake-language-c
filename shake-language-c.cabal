@@ -61,7 +61,7 @@ Library
     , data-default-class
     , fclabels >= 2
     , process
-    , shake >= 0.10
+    , shake >= 0.14
     , split
     , unordered-containers
 
