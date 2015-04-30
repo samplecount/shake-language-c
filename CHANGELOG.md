@@ -1,5 +1,11 @@
 # Changelog for shake-language-c
 
+## [v0.7.0][]
+
+* Add `arm64` ARM version
+* Add support for `arm64` to OSX toolchains
+* Fix compilation error with GHC 7.10 (#25)
+
 ## [v0.6.4][]
 
 * Fix Android toolchain definition for `x86` architecture

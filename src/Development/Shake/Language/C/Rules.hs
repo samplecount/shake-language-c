@@ -91,7 +91,7 @@ buildProduct getLinker getToolChain result getBuildFlags getSources = do
     f1 <- get ToolChain.defaultBuildFlags tc
     f2 <- getBuildFlags
     return $ f2 . f1 $ mempty
-  result *> \_ -> do
+  result %> \_ -> do
     tc <- cachedToolChain ()
     flags <- cachedBuildFlags ()
     objs <- cachedObjects ()
@@ -101,7 +101,7 @@ buildProduct getLinker getToolChain result getBuildFlags getSources = do
       flags
       objs
       result
-  (dropTrailingPathSeparator objectsDir ++ "//*.o") *> \obj -> do
+  (dropTrailingPathSeparator objectsDir ++ "//*.o") %> \obj -> do
     tc <- cachedToolChain ()
     flags <- cachedBuildFlags ()
     -- Compute source file name from object file name

@@ -38,7 +38,7 @@ module Development.Shake.Language.C.Target.OSX (
   , universalBinary
 ) where
 
-import           Control.Applicative hiding ((*>))
+import           Control.Applicative
 import           Data.List (stripPrefix)
 import           Data.List.Split (splitOn)
 import           Data.Maybe
@@ -62,6 +62,7 @@ archString arch =
     Arm Armv6  -> "armv6"
     Arm Armv7  -> "armv7"
     Arm Armv7s -> "armv7s"
+    Arm Arm64  -> "arm64"
     _          -> error $ "Unsupported OSX target architecture " ++ show arch
 
 archFlags :: Target -> [String]
