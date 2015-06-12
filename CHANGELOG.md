@@ -1,5 +1,9 @@
 # Changelog for shake-language-c
 
+## v0.8.0
+
+* Refactor NMF file creation in NaCl module
+
 ## [v0.7.1][]
 
 * Fix compilation error with GHC 7.10 in test suite (#25)
