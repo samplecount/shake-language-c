@@ -33,7 +33,6 @@ module Development.Shake.Language.C.Target.NaCl (
   , mk_nmf
 ) where
 
-import           Data.List (intercalate)
 import           Development.Shake
 import           Development.Shake.FilePath
 import           Data.Version (Version(..))
