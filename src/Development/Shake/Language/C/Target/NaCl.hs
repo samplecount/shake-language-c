@@ -28,7 +28,8 @@ module Development.Shake.Language.C.Target.NaCl (
   , toolChain
   , finalize
   , translate
-  , Arch(..)
+  , Executable(..)
+  , Program(..)
   , mk_nmf
 ) where
 
@@ -130,44 +131,44 @@ translate tc arch input output = do
   command_ [] (toolFromString tc "finalize")
               ["-arch", archName, "-o", output, input]
 
--- | Pepper target architecture
-data Arch =
-    PNaCl       -- ^ Portable Native Client architecture
-  | NaCl C.Arch -- ^ Native Client architecture for specific CPU architecture
-  deriving (Eq, Show)
+-- | Executable specification for Native Client Manifest (nmf) files.
+data Executable = Executable {
+    executablePath :: FilePath      -- ^ Relative path to executable.
+  , optimizationLevel :: Maybe Int  -- ^ Optional optimization level.
+  } deriving (Eq, Show)
 
--- | Create Native Client Manifest (nmf) file.
+-- | Program specification for Native Client Manifest (nmf) files.
+data Program = Program {
+    pnaclTranslate :: Executable    -- ^ Release executable (pexe)
+  , pnaclDebug :: Maybe Executable  -- ^ Executable used when debugging (bit code).
+  } deriving (Eq, Show)
+
+-- | Create Native Client Manifest (nmf) files.
 --
--- This file is needed for serving NaCl\/PNaCl outside the Google Play store. See the native client <https://developer.chrome.com/native-client/reference/nacl-manifest-format documentation> for more information on the file format.
-mk_nmf :: [(Arch, FilePath)]  -- ^ List of executables with the corresponding architecture
-       -> FilePath            -- ^ Output file
+-- This file is needed for serving PNaCl outside the Google Play store. See the native client <https://developer.chrome.com/native-client/reference/nacl-manifest-format documentation> for more information on the file format.
+mk_nmf :: Program  -- ^ Program specification
+       -> FilePath    -- ^ Output file
        -> Action ()
-mk_nmf inputs output = do
-  need $ map snd inputs
-  writeFileLines output $ [
+mk_nmf program output = do
+  need $  [executablePath (pnaclTranslate program)]
+       ++ maybe [] ((:[]).executablePath) (pnaclDebug program)
+  writeFileChanged output . unlines $ [
       "{"
     , "  \"program\": {"
+    , "    \"portable\": {"
     ]
-    ++ intercalate [","] (map program inputs) ++
+    ++ entry "pnacl-translate" (pnaclTranslate program)
+    ++ maybe [] (\e -> [","] ++ entry "pnacl-debug" e) (pnaclDebug program)
+    ++
     [ "    }"
     , "  }"
     , "}"
     ]
   where
-    program (PNaCl, input) = [
-        "    \"portable\": {"
-      , "      \"pnacl-translate\": {"
-      , "        \"url\": \"" ++ makeRelative (takeDirectory output) input ++ "\""
-      , "      }"
-      ]
-    program (NaCl arch, input) =
-      let archName = case arch of
-                        X86 X86_64 -> "x86_64"
-                        X86 _      -> "x86_32"
-                        Arm _      -> "arm"
-                        _          -> error $ "mk_nmf: Unsupported architecture " ++ show arch
-      in [
-           "    \"" ++ archName ++ "\": {"
-         , "      \"url\": \"" ++ makeRelative (takeDirectory output) input ++ "\""
-         , "    }"
-         ]
+    entry what exe = [
+        "      \"" ++ what ++ "\": {"
+      , "        \"url\": \"" ++ makeRelative (takeDirectory output) (executablePath exe) ++ "\""
+      ] ++ maybe [] (\n ->
+       ["      , \"optlevel\": " ++ show n]) (optimizationLevel exe)
+        ++
+      [ "      }" ]
