@@ -164,10 +164,10 @@ mk_nmf program output = do
     , "}"
     ]
   where
-    entry what exe = [
+    entry what prog = [
         "      \"" ++ what ++ "\": {"
-      , "        \"url\": \"" ++ makeRelative (takeDirectory output) (executablePath exe) ++ "\""
+      , "        \"url\": \"" ++ makeRelative (takeDirectory output) (executablePath prog) ++ "\""
       ] ++ maybe [] (\n ->
-       ["      , \"optlevel\": " ++ show n]) (optimizationLevel exe)
+       ["      , \"optlevel\": " ++ show n]) (optimizationLevel prog)
         ++
       [ "      }" ]
