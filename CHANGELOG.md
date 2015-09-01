@@ -1,5 +1,9 @@
 # Changelog for shake-language-c
 
+## v0.8.1
+
+* Use `-I` compiler flag for the `userIncludes` of `BuildFlags` and `-isystem` for `systemIncludes`; semantics should be as before for `gcc` and `clang` but `-isystem` suppresses warnings in system headers
+
 ## v0.8.0
 
 * Refactor NMF file creation in NaCl module

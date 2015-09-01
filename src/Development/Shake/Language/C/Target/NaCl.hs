@@ -33,7 +33,6 @@ module Development.Shake.Language.C.Target.NaCl (
   , mk_nmf
 ) where
 
-import           Data.List (intercalate)
 import           Development.Shake
 import           Development.Shake.FilePath
 import           Data.Version (Version(..))
@@ -165,10 +164,10 @@ mk_nmf program output = do
     , "}"
     ]
   where
-    entry what exe = [
+    entry what prog = [
         "      \"" ++ what ++ "\": {"
-      , "        \"url\": \"" ++ makeRelative (takeDirectory output) (executablePath exe) ++ "\""
+      , "        \"url\": \"" ++ makeRelative (takeDirectory output) (executablePath prog) ++ "\""
       ] ++ maybe [] (\n ->
-       ["      , \"optlevel\": " ++ show n]) (optimizationLevel exe)
+       ["      , \"optlevel\": " ++ show n]) (optimizationLevel prog)
         ++
       [ "      }" ]
