@@ -29,8 +29,8 @@ module Development.Shake.Language.C.BuildFlags (
   -- * Build flags
   , BuildFlags
     -- Poor man's documentation for TH generated functions.
-  , systemIncludes -- | System include directories, referenced by @#include \<...\>@ in code and usually passed to the compiler with the @-I@ flag.
-  , userIncludes -- | User include directories, referenced by @#include "..."@ in code and usually passed to the compiler with the @-iquote@ flag.
+  , systemIncludes -- | System include directories, referenced by @#include \<...\>@ in code and usually passed to the compiler with the @-isystem@ flag.
+  , userIncludes -- | User include directories, referenced by @#include "..."@ in code and usually passed to the compiler with the @-I@ flag.
   , defines -- | Preprocessor defines, a list of pairs of names with or without a value.
   , preprocessorFlags -- | Other preprocessor flags.
   , compilerFlags -- | Compiler flags, either generic ones or for a specific source 'Language'.

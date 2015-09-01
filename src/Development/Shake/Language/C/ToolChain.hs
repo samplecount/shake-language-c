@@ -125,8 +125,8 @@ defaultCompiler toolChain buildFlags input output = do
   need $ [input]
   let depFile = output <.> "d"
   command_ [] (tool toolChain compilerCommand)
-    $  concatMapFlag "-I" (get systemIncludes buildFlags)
-    ++ mapFlag "-iquote" (get userIncludes buildFlags)
+    $  concatMapFlag "-isystem" (get systemIncludes buildFlags)
+    ++ mapFlag "-I" (get userIncludes buildFlags)
     ++ defineFlags buildFlags
     ++ get preprocessorFlags buildFlags
     ++ compilerFlagsFor (languageOf input) buildFlags
