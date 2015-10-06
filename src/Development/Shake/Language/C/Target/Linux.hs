@@ -59,8 +59,8 @@ toolChain GCC =
   $ defaultToolChain
 toolChain LLVM =
     set variant LLVM
-  $ set compilerCommand "gcc"
+  $ set compilerCommand "clang"
   $ set archiverCommand "ar"
-  $ set linkerCommand "g++"
+  $ set linkerCommand "clang++"
   $ defaultToolChain
 toolChain Generic = toolChain GCC
