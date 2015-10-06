@@ -1,5 +1,13 @@
 # Changelog for shake-language-c
 
+## v0.8.3
+
+* Allow to set linker command via `LD` environment variable
+
+## v0.8.2
+
+* Fix compiler and linker commands for Clang toolchain on Linux
+
 ## v0.8.1
 
 * Use `-I` compiler flag for the `userIncludes` of `BuildFlags` and `-isystem` for `systemIncludes`; semantics should be as before for `gcc` and `clang` but `-isystem` suppresses warnings in system headers
@@ -55,4 +63,3 @@ Bug fix release.
 ## v0.5.0
 
 First released version.
-
