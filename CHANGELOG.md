@@ -1,36 +1,40 @@
 # Changelog for shake-language-c
 
+## v0.8.1
+
+* Use `-I` compiler flag for the `userIncludes` of `BuildFlags` and `-isystem` for `systemIncludes`; semantics should be as before for `gcc` and `clang` but `-isystem` suppresses warnings in system headers
+
 ## v0.8.0
 
 * Refactor NMF file creation in NaCl module
 
-## [v0.7.1][]
+## v0.7.1
 
 * Fix compilation error with GHC 7.10 in test suite (#25)
 
-## [v0.7.0][]
+## v0.7.0
 
 * Add `arm64` ARM version
 * Add support for `arm64` to OSX toolchains
 * Fix compilation error with GHC 7.10 (#25)
 
-## [v0.6.4][]
+## v0.6.4
 
 * Fix Android toolchain definition for `x86` architecture
 
-## [v0.6.3][]
+## v0.6.3
 
 * Fix bug in `Development.Shake.Language.C.Target.OSX`: `getPlatformVersionsWithRoot` works correctly now with SDK directories without version number, as introduced by Xcode 6
 
-## [v0.6.2][]
+## v0.6.2
 
 Bug fix release.
 
-## [v0.6.1][]
+## v0.6.1
 
 Bug fix release.
 
-## [v0.6.0][]
+## v0.6.0
 
 ### Added
 
@@ -48,13 +52,7 @@ Bug fix release.
 * Remove `libppapi`, `libppapi_cpp`, `libnacl_io`, `libppapi_simple` from `Development.Shake.Language.C.Target.NaCl`.
 * Remove `Development.Shake.Language.C.Target.archString`.
 
-## [v0.5.0][]
+## v0.5.0
 
 First released version.
 
-[v0.6.4]: https://github.com/samplecount/shake-language-c/tree/v0.6.4
-[v0.6.3]: https://github.com/samplecount/shake-language-c/tree/v0.6.3
-[v0.6.2]: https://github.com/samplecount/shake-language-c/tree/v0.6.2
-[v0.6.1]: https://github.com/samplecount/shake-language-c/tree/v0.6.1
-[v0.6.0]: https://github.com/samplecount/shake-language-c/tree/v0.6.0
-[v0.5.0]: https://github.com/samplecount/shake-language-c/tree/v0.5.0
