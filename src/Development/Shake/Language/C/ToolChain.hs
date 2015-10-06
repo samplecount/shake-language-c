@@ -207,12 +207,16 @@ tool toolChain getter = toolFromString toolChain (get getter toolChain)
 --
 --  [@CC@] Path to @C@ compiler.
 --
+--  [@LD@] Path to linker.
+--
 --  [@SHAKE_TOOLCHAIN_VARIANT@] One of the values of 'ToolChainVariant' (case insensitive). If this variable is not present, an attempt is made to determine the toolchain variant from the @C@ compiler command.
 applyEnv :: ToolChain -> Action ToolChain
 applyEnv toolChain = do
   cc <- getEnv "CC"
+  ld <- getEnv "LD"
   vendor <- getEnv "SHAKE_TOOLCHAIN_VARIANT"
   return $ maybe id (set compilerCommand) cc
+         $ maybe id (set linkerCommand) ld
          . maybe id (set variant) ((vendor >>= parseVendor) <|> (cc >>= vendorFromCommand))
          $ toolChain
   where
