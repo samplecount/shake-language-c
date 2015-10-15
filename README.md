@@ -1,6 +1,7 @@
 # shake-language-c
 
-[![Build Status](https://travis-ci.org/samplecount/shake-language-c.svg?branch=develop)](https://travis-ci.org/samplecount/shake-language-c)
+[![Hackage version](https://img.shields.io/hackage/v/shake-language-c.svg?style=flat)](https://hackage.haskell.org/package/shake-language-c)
+[![Build Status](https://img.shields.io/travis/samplecount/shake-language-c.svg?style=flat&branch=develop)](https://travis-ci.org/samplecount/shake-language-c)
 
 **shake-language-c** is a cross-platform build system based on the [Shake](https://github.com/ndmitchell/shake) Haskell library. The focus is on cross-compilation of *C*, *C++* and *Objective C* source code to various target platforms. Currently supported target platforms are *iOS*, *Android NDK*, *Google Portable Native Client*, *MacOS X*, *Linux* and *Windows* (*MinGW*). Supported host platforms are *MacOS X*, *Linux* and *Windows*.
 
