@@ -30,7 +30,7 @@ Here's an *iOS* example that compiles all `.cpp` files in the `src` directory. T
 
       lib <- staticLibrary toolChain
               ("build" </> toBuildPrefix target </> "libexample.a")
-              (return $ 
+              (return $
                    append compilerFlags [(Just Cpp, ["-std=c++11"])]
                >>> append compilerFlags [(Nothing, ["-O3"])]
                >>> append userIncludes ["include"] )
