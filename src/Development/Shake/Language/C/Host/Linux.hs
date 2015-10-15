@@ -25,7 +25,7 @@ import System.Process (readProcess)
 -- | Get host architecture.
 getHostArch :: IO Arch
 getHostArch = do
-    arch <- fmap (head.lines) $ readProcess "arch" [] ""
+    arch <- fmap (head.lines) $ readProcess "uname" ["-m"] ""
     return $ case arch of
         "i386" -> X86 I386
         "i686" -> X86 I686
