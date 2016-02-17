@@ -1,6 +1,6 @@
 # shake-language-c
 
-[![Hackage version](https://img.shields.io/hackage/v/freesound.svg?style=flat)](http://hackage.haskell.org/package/freesound)
+[![Hackage version](https://img.shields.io/hackage/v/shake-language-c.svg?style=flat)](https://hackage.haskell.org/package/shake-language-c)
 [![Stackage LTS](http://stackage.org/package/shake-language-c/badge/lts)](http://stackage.org/lts/package/shake-language-c)
 [![Stackage Nightly](http://stackage.org/package/shake-language-c/badge/nightly)](http://stackage.org/nightly/package/shake-language-c)
 [![Build Status](https://travis-ci.org/samplecount/shake-language-c.svg?branch=develop)](https://travis-ci.org/samplecount/shake-language-c)
