@@ -16,21 +16,26 @@ module Development.Shake.Language.C.Host.Windows (
   getHostToolChain
 ) where
 
+import           Data.Char (isSpace)
 import           Development.Shake
+import           Development.Shake.Command
 import           Development.Shake.Language.C.Target
 import           Development.Shake.Language.C.Target.Windows
 import           Development.Shake.Language.C.ToolChain
 import qualified System.Info as System
 
+trim :: String -> String
+trim = reverse . dropWhile isSpace . reverse
+
 getHostArch :: IO Arch
 getHostArch = do
-    -- TODO: Get the info from the environment
-    let arch = System.arch
-    return $ case arch of
-        "i386" -> X86 I386
-        "i686" -> X86 I686
-        "x86_64" -> X86 X86_64
-        _ -> error $ "Unknown host architecture " ++ arch
+    Stdout out <- cmd "wmic os get osarchitecture"
+    let spec = map trim . lines $ out
+    case spec of
+        ("OSArchitecture":"32-Bit":_) -> return $ X86 I686
+        ("OSArchitecture":"64-Bit":_) -> return $ X86 X86_64
+        ("OSArchitecture":arch:_) -> error $ "Unknown host architecture " ++ arch
+        _ -> error $ "Couldn't determine host architecture from " ++ show spec
 
 getHostToolChain :: IO (Target, Action ToolChain)
 getHostToolChain = do
