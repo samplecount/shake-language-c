@@ -1,5 +1,10 @@
 # Changelog for shake-language-c
 
+## v0.8.6
+
+* Fix Windows host target
+* Get host architecture from environment on Windows
+
 ## v0.8.3
 
 * Allow to set linker command via `LD` environment variable
