@@ -18,7 +18,7 @@ module Development.Shake.Language.C.Host.Windows (
 
 import           Development.Shake
 import           Development.Shake.Language.C.Target
-import           Development.Shake.Language.C.Target.Linux
+import           Development.Shake.Language.C.Target.Windows
 import           Development.Shake.Language.C.ToolChain
 import qualified System.Info as System
 
