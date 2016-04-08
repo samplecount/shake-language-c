@@ -1,6 +1,4 @@
-/.cabal-sandbox/
 /.shake.database
+/.stack-work
 /build/
-/cabal.sandbox.config
-/dist/
 /tests/build/

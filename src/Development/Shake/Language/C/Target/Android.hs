@@ -1,4 +1,4 @@
--- Copyright 2012-2013 Samplecount S.L.
+-- Copyright 2012-2016 Samplecount S.L.
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ Description: Toolchain definitions and utilities for Android
 This module provides toolchain definitions and utilities for targeting Android.
 See "Development.Shake.Language.C.Rules" for examples of how to use a target
 toolchain.
+
+The minimum required Android NDK revision is 11c.
 -}
 module Development.Shake.Language.C.Target.Android (
     target
@@ -45,6 +47,7 @@ toolChainPrefix :: Target -> String
 toolChainPrefix x =
     case targetArch x of
         X86 _ -> "x86-"
+        Arm Arm64 -> "aarch64-linux-android-"
         Arm _ -> "arm-linux-androideabi-"
         arch  -> unsupportedArch arch
 
@@ -85,9 +88,10 @@ mkDefaultBuildFlags ndk version arch =
               </> "platforms"
               </> "android-" ++ show (head (versionBranch version))
               </> "arch-" ++ case arch of
-                              (X86 _) -> "x86"
-                              (Arm _) -> "arm"
-                              _       -> unsupportedArch arch
+                              (X86 _)     -> "x86"
+                              (Arm Arm64) -> "arm64"
+                              (Arm _)     -> "arm"
+                              _           -> unsupportedArch arch
     march = "-march=" ++ case arch of
                           X86 I386   -> "i386"
                           X86 I686   -> "i686"
@@ -95,8 +99,10 @@ mkDefaultBuildFlags ndk version arch =
                           Arm Armv5  -> "armv5te"
                           Arm Armv6  -> "armv5te"
                           Arm Armv7  -> "armv7-a"
+                          Arm Arm64  -> "armv8-a"
                           _ -> unsupportedArch arch
-    archCompilerFlags (Arm Armv7) = [(Nothing, ["-mfloat-abi=softfp", "-mfpu=neon" {- vfpv3-d16 -}])]
+    archCompilerFlags (Arm Armv7) = [(Nothing, ["-mfloat-abi=softfp", "-mfpu=neon"])]
+    archCompilerFlags (Arm Arm64) = []
     archCompilerFlags (Arm _)     = [(Nothing, ["-mtune=xscale", "-msoft-float"])]
     archCompilerFlags _           = []
     archLinkerFlags (Arm Armv7)   = ["-Wl,--fix-cortex-a8"]
@@ -108,42 +114,42 @@ mkDefaultBuildFlags ndk version arch =
 sdkVersion :: Int -> Version
 sdkVersion n = Version [n] []
 
-gccToolChain :: FilePath -> Target -> Version -> FilePath
-gccToolChain ndk target version =
+gccToolChain :: FilePath -> Target -> FilePath
+gccToolChain ndk target =
   ndk </> "toolchains"
-      </> toolChainPrefix target ++ showVersion version
+      </> toolChainPrefix target ++ showVersion (Version [4,9] [])
       </> "prebuilt"
       </> osPrefix
 
 -- | Construct an Android toolchain.
 toolChain :: FilePath                     -- ^ NDK source directory
           -> Version                      -- ^ SDK version, see `sdkVersion`
-          -> (ToolChainVariant, Version)  -- ^ Toolchain variant and version
+          -> ToolChainVariant             -- ^ Toolchain variant
           -> Target                       -- ^ Build target, see `target`
           -> ToolChain                    -- ^ Resulting toolchain
-toolChain "" _ (_, _) _ = error "Empty NDK directory"
-toolChain ndk version (GCC, tcVersion) t =
+toolChain "" _ _ _ = error "Empty NDK directory"
+toolChain ndk version GCC t =
     set variant GCC
-  $ set toolDirectory (Just (gccToolChain ndk t tcVersion </> "bin"))
+  $ set toolDirectory (Just (gccToolChain ndk t </> "bin"))
   $ set toolPrefix (toolPrefix_ t)
   $ set compilerCommand "gcc"
   $ set archiverCommand "ar"
   $ set linkerCommand "g++"
   $ set defaultBuildFlags (return $ mkDefaultBuildFlags ndk version (targetArch t))
   $ defaultToolChain
-toolChain ndk version (LLVM, tcVersion) t =
+toolChain ndk version LLVM t =
     set variant LLVM
   $ set toolDirectory (Just (ndk </> "toolchains"
-                                 </> "llvm-" ++ showVersion tcVersion
+                                 </> "llvm"
                                  </> "prebuilt"
                                  </> osPrefix
                                  </> "bin"))
   $ set compilerCommand "clang"
-  $ set archiverCommand "llvm-ar"
+  $ set archiverCommand (gccToolChain ndk t </> "bin" </> toolPrefix_ t ++ "ar")
   $ set linkerCommand "clang++"
   $ set defaultBuildFlags (return $
     let flags = [ "-target", llvmTarget t
-                , "-gcc-toolchain", gccToolChain ndk t (Version [4,8] []) ]
+                , "-gcc-toolchain", gccToolChain ndk t ]
     in  mkDefaultBuildFlags ndk version (targetArch t)
       . append compilerFlags [(Nothing, flags)]
       . append linkerFlags flags
@@ -154,18 +160,18 @@ toolChain ndk version (LLVM, tcVersion) t =
       case targetArch x of
         Arm Armv5 -> "armv5te-none-linux-androideabi"
         Arm Armv7 -> "armv7-none-linux-androideabi"
+        Arm Arm64 -> "aarch64-none-linux-android"
         X86 I386  -> "i686-none-linux-android"
         arch      -> unsupportedArch arch
-toolChain _ _ (tcVariant, tcVersion) _ =
-  error $ "Unknown toolchain variant "
-        ++ show tcVariant ++ " "
-        ++ showVersion tcVersion
+toolChain _ _ tcVariant _ =
+  error $ "Unsupported toolchain variant " ++ show tcVariant
 
 -- | Valid Android ABI identifier for the given architecture.
 abiString :: Arch -> String
 abiString (Arm Armv5) = "armeabi"
 abiString (Arm Armv6) = "armeabi"
 abiString (Arm Armv7) = "armeabi-v7a"
+abiString (Arm Arm64) = "arm64-v8a"
 abiString (X86 _)     = "x86"
 abiString arch        = unsupportedArch arch
 
