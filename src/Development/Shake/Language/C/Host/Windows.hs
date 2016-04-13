@@ -16,7 +16,7 @@ module Development.Shake.Language.C.Host.Windows (
   getHostToolChain
 ) where
 
-import           Data.Char (isSpace)
+import           Data.Char (isSpace, toLower)
 import           Development.Shake
 import           Development.Shake.Command
 import           Development.Shake.Language.C.Target
@@ -31,10 +31,10 @@ getHostArch :: IO Arch
 getHostArch = do
     Stdout out <- cmd "wmic os get osarchitecture"
     let spec = map trim . lines $ out
-    case spec of
-        ("OSArchitecture":"32-Bit":_) -> return $ X86 I686
-        ("OSArchitecture":"64-Bit":_) -> return $ X86 X86_64
-        ("OSArchitecture":arch:_) -> error $ "Unknown host architecture " ++ arch
+    case map (map toLower) spec of
+        ("osarchitecture":"32-bit":_) -> return $ X86 I686
+        ("osarchitecture":"64-bit":_) -> return $ X86 X86_64
+        ("osarchitecture":arch:_) -> error $ "Unknown host architecture " ++ arch
         _ -> error $ "Couldn't determine host architecture from " ++ show spec
 
 getHostToolChain :: IO (Target, Action ToolChain)

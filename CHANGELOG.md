@@ -1,5 +1,9 @@
 # Changelog for shake-language-c
 
+## v0.9.1
+
+* Fix host architecture detection on Windows 10
+
 ## v0.9.0
 
 * Add support for the Android *arm64-v8a* target architecture and drop support for specifying the toolchain version; this API breaking change requires a minimum Android NDK revision 11c
