@@ -13,7 +13,7 @@
 -- limitations under the License.
 
 Name:         shake-language-c
-Version:      0.9.0
+Version:      0.9.1
 Synopsis:     Utilities for cross-compiling with Shake
 Description:  This library provides <http://hackage.haskell.org/package/shake Shake> utilities for cross-compiling @C@, @C++@ and @ObjC@ code for various target platforms. Currently supported target platforms are Android, iOS, Linux, MacOS X, Windows\/MinGW and Google Portable Native Client (PNaCl). Supported host platforms are MacOS X, Linux and Windows.
 Category:     Development
