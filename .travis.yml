@@ -1,10 +1,8 @@
 # Use container infrastructure to enable caching
-# FIXME: sudo is needed for deployment, see
-#        https://github.com/travis-ci/travis-ci/issues/5033
-sudo: true
+sudo: false
 
 # Do not choose a language; we provide our own build tools.
-language: generic
+language: haskell
 
 # Caching so the next build will be fast too.
 cache:
