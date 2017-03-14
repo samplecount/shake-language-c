@@ -1,5 +1,7 @@
 # Use container infrastructure to enable caching
-sudo: false
+# FIXME: sudo is needed for deployment, see
+#        https://github.com/travis-ci/travis-ci/issues/5033
+sudo: true
 
 # Do not choose a language; we provide our own build tools.
 language: generic
