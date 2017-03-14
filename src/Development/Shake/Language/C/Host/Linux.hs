@@ -30,6 +30,7 @@ getHostArch = do
         "i386" -> X86 I386
         "i686" -> X86 I686
         "x86_64" -> X86 X86_64
+        "armv7l" -> Arm Armv7
         _ -> error $ "Unknown host architecture " ++ arch
 
 -- | Get host toolchain.
