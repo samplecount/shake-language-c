@@ -1,5 +1,13 @@
 # Changelog for shake-language-c
 
+## v0.10.1
+
+* Add support for Linux ARMv7
+
+## v0.10.0
+
+* Add mkConfig function that caches dependencies
+
 ## v0.9.1
 
 * Fix host architecture detection on Windows 10
