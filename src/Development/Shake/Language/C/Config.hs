@@ -1,4 +1,6 @@
-{-# LANGUAGE DeriveDataTypeable, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
 
 {-|
 Description: Read values from configuration files
@@ -21,6 +23,8 @@ import Development.Shake.Config (readConfigFileWithEnv)
 import Development.Shake.Language.C.Util (words')
 
 newtype Config = Config ([FilePath], FilePath, [(String, String)], String) deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
+
+type instance RuleResult Config = Maybe String
 
 {- | Given a list of dependencies, return a function that takes an environment
 of variable bindings, a configuration file path and a configuration variable

@@ -61,7 +61,7 @@ Library
     , data-default-class
     , fclabels >= 2
     , process
-    , shake >= 0.14
+    , shake >= 0.16
     , split
     , unordered-containers
 
@@ -70,14 +70,14 @@ test-suite doctests
   hs-source-dirs: tests
   main-is:        doctests.hs
   ghc-options:    -threaded
-  build-depends:  base, doctest >= 0.8, shake >= 0.10, shake-language-c
+  build-depends:  base, doctest >= 0.8, shake, shake-language-c
 
 test-suite spectests
   type:           exitcode-stdio-1.0
   hs-source-dirs: tests
   main-is:        spectests.hs
   ghc-options:    -threaded
-  build-depends:  base, directory, hspec, shake >= 0.10, shake-language-c
+  build-depends:  base, directory, hspec, shake, shake-language-c
 
 Source-Repository head
   Type:     git
