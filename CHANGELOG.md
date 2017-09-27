@@ -1,5 +1,9 @@
 # Changelog for shake-language-c
 
+## v0.11.0
+
+* Support shake 0.16
+
 ## v0.10.1
 
 * Add support for Linux ARMv7
