@@ -15,7 +15,6 @@ module Development.Shake.Language.C.Config(
   , getPaths
 ) where
 
-import Control.Applicative
 import qualified Data.HashMap.Strict as Map
 import Development.Shake
 import Development.Shake.Classes

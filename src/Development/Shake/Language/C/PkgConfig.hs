@@ -26,7 +26,6 @@ module Development.Shake.Language.C.PkgConfig (
   , fromConfig
 ) where
 
-import Control.Applicative
 import Data.Char (toLower)
 import Data.Default.Class (Default(..))
 import Data.List (intercalate, isPrefixOf)

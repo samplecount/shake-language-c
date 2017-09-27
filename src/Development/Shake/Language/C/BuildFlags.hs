@@ -54,7 +54,6 @@ import           Control.Category ((>>>))
 import           Control.Monad
 import           Data.Char (isSpace)
 import           Data.Default.Class (Default(..))
-import           Data.Monoid
 import           Data.List
 import           Data.List.Split
 import           Data.Maybe

@@ -18,11 +18,9 @@ module Development.Shake.Language.C.Host.Windows (
 
 import           Data.Char (isSpace, toLower)
 import           Development.Shake
-import           Development.Shake.Command
 import           Development.Shake.Language.C.Target
 import           Development.Shake.Language.C.Target.Windows
 import           Development.Shake.Language.C.ToolChain
-import qualified System.Info as System
 
 trim :: String -> String
 trim = reverse . dropWhile isSpace . reverse

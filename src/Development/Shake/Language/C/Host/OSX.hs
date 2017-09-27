@@ -16,7 +16,6 @@ module Development.Shake.Language.C.Host.OSX (
   getHostToolChain
 ) where
 
-import Control.Applicative
 import Development.Shake
 import Development.Shake.Language.C.Target
 import Development.Shake.Language.C.Target.OSX
