@@ -57,6 +57,7 @@ import           Data.Default.Class (Default(..))
 import           Data.List
 import           Data.List.Split
 import           Data.Maybe
+import           Data.Semigroup
 import           Development.Shake.Language.C.Language (Language(..))
 import           Development.Shake.Language.C.Label
 import           Development.Shake.Language.C.Util
@@ -142,9 +143,8 @@ defaultBuildFlags =
 instance Default BuildFlags where
   def = defaultBuildFlags
 
-instance Monoid BuildFlags where
-  mempty = defaultBuildFlags
-  a `mappend` b =
+instance Semigroup BuildFlags where
+  a <> b =
       append systemIncludes    (get systemIncludes a)
     . append userIncludes      (get userIncludes a)
     . append defines           (get defines a)
@@ -156,6 +156,10 @@ instance Monoid BuildFlags where
     . append localLibraries    (get localLibraries a)
     . append archiverFlags     (get archiverFlags a)
     $ b
+
+instance Monoid BuildFlags where
+  mempty = defaultBuildFlags
+  mappend = (<>)
 
 -- | Construct preprocessor flags from the 'defines' field of 'BuildFlags'.
 defineFlags :: BuildFlags -> [String]
