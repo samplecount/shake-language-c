@@ -1,5 +1,9 @@
 # Changelog for shake-language-c
 
+## v0.12.0
+
+* Support GHC 8.4.1
+
 ## v0.11.0
 
 * Support shake 0.16
