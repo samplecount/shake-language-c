@@ -30,6 +30,7 @@ data Language =
   | Cpp     -- ^ C++
   | ObjC    -- ^ Objective-C
   | ObjCpp  -- ^ Objective-C with C++ (Apple extension)
+  | Asm     -- ^ Assembly
   deriving (Enum, Eq, Show)
 
 -- | Default mapping from file extension to source language.
@@ -39,6 +40,7 @@ defaultLanguageMap = concatMap f [
   , (Cpp, [".cc", ".CC", ".cpp", ".CPP", ".C", ".cxx", ".CXX"])
   , (ObjC, [".m"])
   , (ObjCpp, [".mm", ".M"])
+  , (Asm, [".s", ".S"])
   ]
   where f (lang, exts) = map (\ext -> (ext, lang)) exts
 
