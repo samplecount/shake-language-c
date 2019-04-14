@@ -54,7 +54,7 @@ parseCflags [] = id
 parseCflags (x:xs)
   | isPrefixOf "-I" x = parseCflags xs . append systemIncludes [drop 2 x]
   | isPrefixOf "-i" x = parseCflags xs . append userIncludes [drop 2 x]
-  | otherwise = append compilerFlags [(Nothing, [x])]
+  | otherwise = parseCflags xs . append compilerFlags [(Nothing, [x])]
 
 parseLibs :: [String] -> (BuildFlags -> BuildFlags)
 parseLibs [] = id
