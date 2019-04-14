@@ -37,6 +37,7 @@ data OS =
   | OSX     -- ^ Apple Mac OSX and iOS
   | Pepper  -- ^ Google Portable Native Client (PNaCl)
   | Windows -- ^ Microsoft Windows
+  | None    -- ^ No OS (bare metal)
   deriving (Eq, Ord, Show)
 
 -- | Target platform.
