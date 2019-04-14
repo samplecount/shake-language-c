@@ -1,5 +1,10 @@
 # Changelog for shake-language-c
 
+## v0.13.0
+
+* Add "Asm" source language
+* Add "None" OS
+
 ## v0.12.0
 
 * Support GHC 8.4.1
